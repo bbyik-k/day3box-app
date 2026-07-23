@@ -67,4 +67,4 @@ npx tsc --noEmit     # 타입 검사
 4. Task 완료 시 `/docs:update-roadmap`으로 ROADMAP.md 갱신 (✅ 표시 + 다음 우선순위 지정), **각 Task 완료 후 중단하고 지시 대기**
 5. 커밋: 컨벤셔널 + 괄호 스코프 + 한국어 (예: `feat(braindump): 좌측 패널 task 추가/삭제 구현`)
 
-전문 서브에이전트가 `.claude/agents/`에 구성되어 있다: `development-planner`(ROADMAP 관리), `nextjs-supabase-expert`(풀스택 구현), `nextjs-app-developer`(라우팅·구조), `ui-markup-specialist`(Broadsheet 마크업), `code-reviewer`, `supabase-db-architect`(스키마·RLS), `starter-cleaner`, `prd-generator`/`prd-validator`/`dev-chronicle-writer`(문서).
+전문 서브에이전트가 `.claude/agents/`에 구성되어 있다: `development-planner`(ROADMAP 관리), `nextjs-supabase-expert`(풀스택 구현), `nextjs-app-developer`(라우팅/구조), `ui-markup-specialist`(Broadsheet 마크업), `code-reviewer`, `supabase-db-architect`(스키마/RLS), `prd-generator`/`prd-validator`/`dev-chronicle-writer`(문서).
