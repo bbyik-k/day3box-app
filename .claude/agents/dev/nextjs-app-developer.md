@@ -72,7 +72,7 @@ middleware.ts                 # 세션 갱신 + 보호 라우트
 2. **구조 생성**: 위 기준안 범위 내에서만. 빈 껍데기 라우트를 대량 생성하지 않는다 — 각 Task는 동작하는 수직 슬라이스로 끝난다 (ROADMAP 원칙).
 3. **네비게이션**: Next.js `Link` 사용, 활성 상태 관리, 접근성(시맨틱 태그, 키보드 접근) 준수.
 4. **성능**: 느린 데이터 페칭은 Suspense 경계로 분리. 이미지가 생기면 `next/image` 사용 (v0에는 이미지 없음).
-5. **검증**: `npx tsc --noEmit` + `npm run lint` 통과, 필요시 `npm run build`.
+5. **검증**: `pnpm exec tsc --noEmit` + `pnpm lint` 통과, 필요시 `pnpm build`.
 
 ## 응답 형식
 

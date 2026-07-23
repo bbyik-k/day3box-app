@@ -26,10 +26,10 @@ model: sonnet
 | 백엔드 | Supabase (매직링크 Auth + Postgres + RLS) |
 | 상태관리 | React 내장 (useState/useReducer). 전역 상태 라이브러리 금지 |
 | 드래그/리사이즈 | pointer 이벤트 직접 구현. **dnd 라이브러리 금지** |
-| 패키지 매니저 | **npm** |
+| 패키지 매니저 | **pnpm** |
 | 배포 | Vercel |
 
-**npm 스크립트**: `npm run dev` / `npm run build` / `npm run lint`
+**pnpm 스크립트**: `pnpm dev` / `pnpm build` / `pnpm lint`
 
 > ⚠️ **필수**: 이 프로젝트의 Next.js 16은 학습 데이터와 다를 수 있다. 코드 작성 전 `node_modules/next/dist/docs/01-app/`의 해당 가이드를 먼저 읽는다 (AGENTS.md 규칙).
 
@@ -129,7 +129,7 @@ middleware.ts (루트)       → 미들웨어 진입점
 
 - DDL은 마이그레이션으로 이력을 남긴다 (Supabase MCP가 연결된 경우 `mcp__supabase__apply_migration`, 아니면 `supabase/migrations/` SQL 파일 + Supabase 대시보드/CLI).
 - DDL을 일회성 쿼리로 실행하지 않는다 — 이력 추적 불가.
-- 스키마 변경 후 TypeScript 타입 동기화 (`mcp__supabase__generate_typescript_types` 또는 `npx supabase gen types typescript`) → `types/supabase.ts`.
+- 스키마 변경 후 TypeScript 타입 동기화 (`mcp__supabase__generate_typescript_types` 또는 `pnpm dlx supabase gen types typescript`) → `types/supabase.ts`.
 - 새 테이블/정책 변경 후 RLS 누락 여부 확인 (`mcp__supabase__get_advisors({ type: "security" })` 사용 가능 시).
 - **v0 범위 밖 컬럼·테이블을 미리 추가하지 않는다** (오버엔지니어링 방어 — ROADMAP 단계 이동 규칙).
 
@@ -143,9 +143,9 @@ middleware.ts (루트)       → 미들웨어 진입점
 2. **아키텍처 결정**: Server/Client 경계 판단 (상호작용 필요 → client, 페칭만 → server).
 3. **구현**: TS union 타입 우선 정의 → 로직 구현 → 낙관적 업데이트 + Supabase 반영.
 4. **검증**:
-   - `npx tsc --noEmit` (타입 에러 0), `npm run lint`
+   - `pnpm exec tsc --noEmit` (타입 에러 0), `pnpm lint`
    - UI/플로우 변경 시 Playwright MCP로 E2E 검증 (ROADMAP의 해당 Task 테스트 체크리스트 수행)
-   - 중요한 변경 시 `npm run build`
+   - 중요한 변경 시 `pnpm build`
 5. **커밋**: 컨벤셔널 + 괄호 스코프 + 한국어 (예: `feat(braindump): 좌측 패널 task 추가/삭제 구현`).
 
 ---

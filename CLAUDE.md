@@ -21,10 +21,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 명령어
 
 ```bash
-npm run dev          # 개발 서버
-npm run build        # 프로덕션 빌드
-npm run lint         # ESLint
-npx tsc --noEmit     # 타입 검사
+pnpm dev                  # 개발 서버
+pnpm build                # 프로덕션 빌드
+pnpm lint                 # ESLint
+pnpm exec tsc --noEmit    # 타입 검사
 ```
 
 - 테스트 프레임워크는 설정되어 있지 않다. E2E 검증은 **Playwright MCP**로 수행하며, 시나리오는 ROADMAP.md의 각 Task "테스트 체크리스트"에 정의되어 있다.
@@ -32,7 +32,7 @@ npx tsc --noEmit     # 타입 검사
 
 ## 아키텍처
 
-**스택**: Next.js 16.2.11 (App Router) + React 19 + TypeScript strict + Tailwind v4 / Supabase (매직링크 Auth + Postgres + RLS) / Vercel / npm
+**스택**: Next.js 16.2.11 (App Router) + React 19 + TypeScript strict + Tailwind v4 / Supabase (매직링크 Auth + Postgres + RLS) / Vercel / **pnpm**
 
 **v0 구조**: 사실상 단일 핵심 화면(하루 뷰: 좌 brain dump·TOP3 패널 + 우 타임 그리드) + 로그인/인증 콜백. 날짜 이동(어제/오늘/내일)은 별도 라우트가 아니라 날짜 컨텍스트로 처리.
 
