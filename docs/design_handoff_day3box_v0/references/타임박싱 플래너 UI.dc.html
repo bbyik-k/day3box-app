@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/broadsheet-aa72233a-abd5-462e-8cc1-ed962f3db53f/styles.css">
+<script src="_ds/broadsheet-aa72233a-abd5-462e-8cc1-ed962f3db53f/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+:root{--cat1:var(--color-accent);--cat2:var(--color-accent-2);--cat3:var(--color-process-yellow);--cat4:var(--color-neutral-600);--cat5:var(--color-accent-700)}
+body{margin:0}
+.tb-hourline{position:absolute;left:0;right:0;border-top:1px solid var(--color-divider)}
+.tb-hourline > span{position:absolute;left:0;top:-8px;font-size:11px;letter-spacing:.06em;background:var(--color-bg);padding-right:8px;color:color-mix(in srgb,var(--color-text) 55%,transparent)}
+.tb-block{position:absolute;left:56px;right:8px;border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-sm)}
+.tb-liprepend{width:15px;height:15px;flex:none;border:1.5px solid var(--color-divider);border-radius:var(--radius-sm)}
+.tb-dump-row:hover{background:color-mix(in srgb,var(--color-text) 4%,transparent)}
+.tb-add:hover{border-color:var(--color-accent);color:var(--color-accent)}
+</style>
+</helmet>
+
+<div style="max-width:1200px;margin:0 auto;padding:0 var(--space-6) var(--space-8);font-family:var(--font-body)">
+
+  <div class="nav" style="padding-left:0;padding-right:0">
+    <span class="nav-brand">day3box</span>
+    <a href="#" aria-current="page">오늘</a>
+    <a href="#">주간</a>
+    <a href="#">서클</a>
+    <span class="avatar" style="width:34px;height:34px;border-radius:50%;background:var(--color-surface);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:600;font-size:14px;margin-left:var(--space-3)">나</span>
+  </div>
+
+  <div style="height:3px;background:var(--color-text);margin-top:var(--space-2)"></div>
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:var(--space-2) 0;gap:var(--space-4);flex-wrap:wrap">
+    <div style="display:flex;align-items:baseline;gap:var(--space-3)">
+      <h1 style="margin:0;font-size:40px">9월 12일 금요일</h1>
+      <span class="text-muted" style="font-size:14px;letter-spacing:.04em">타임박싱 플래너 · 계획 대비 실제</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:var(--space-2)">
+      <button type="button" class="{{ planBtnClass }}" onClick="{{ goPlan }}">아침 계획</button>
+      <button type="button" class="{{ eveBtnClass }}" onClick="{{ goEve }}">저녁 기록</button>
+      <span style="width:1px;height:22px;background:var(--color-divider);margin:0 var(--space-1)"></span>
+      <button type="button" class="btn btn-ghost">‹ 어제</button>
+      <button type="button" class="btn btn-ghost">내일 ›</button>
+    </div>
+  </div>
+  <div style="height:1px;background:var(--color-text);opacity:.4;margin-bottom:var(--space-6)"></div>
+
+  <!-- ══════════ SCREEN: 아침 계획 ══════════ -->
+  <sc-if value="{{ isPlan }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="아침 계획" style="display:grid;grid-template-columns:352px 1fr;gap:var(--space-8);align-items:start">
+    <div>
+      <h6 style="margin-bottom:var(--space-2)">쏟아내기 · Brain dump</h6>
+      <p class="text-muted" style="font-size:13px;margin-top:0;margin-bottom:var(--space-3)">머릿속을 다 비운다. 개수 제한 없음.</p>
+      <div style="display:flex;flex-direction:column">
+        <div class="tb-dump-row" style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px;border-radius:var(--radius-sm)"><span class="tb-liprepend"></span><span style="flex:1">이력서 수정</span><span class="tag tag-outline">TOP 3</span></div>
+        <div class="tb-dump-row" style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px;border-radius:var(--radius-sm)"><span class="tb-liprepend"></span><span style="flex:1">면접 스터디</span><span class="tag tag-outline">TOP 3</span></div>
+        <div class="tb-dump-row" style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px;border-radius:var(--radius-sm)"><span class="tb-liprepend"></span><span style="flex:1">포트폴리오 리팩터</span><span class="tag tag-outline">TOP 3</span></div>
+        <div class="tb-dump-row" style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px;border-radius:var(--radius-sm)"><span class="tb-liprepend"></span><span style="flex:1">운동</span></div>
+        <div class="tb-dump-row" style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px;border-radius:var(--radius-sm)"><span class="tb-liprepend"></span><span style="flex:1">장보기</span></div>
+        <div class="tb-dump-row" style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px;border-radius:var(--radius-sm)"><span class="tb-liprepend"></span><span style="flex:1">은행 업무</span></div>
+      </div>
+      <div class="tb-add" style="display:flex;align-items:center;gap:8px;margin-top:var(--space-2);padding:8px 10px;border:1px dashed var(--color-divider);border-radius:var(--radius-md);color:color-mix(in srgb,var(--color-text) 55%,transparent);font-size:14px;cursor:text">＋ 할 일 추가…</div>
+
+      <h6 style="margin-top:var(--space-6);margin-bottom:var(--space-1)">TOP 3 <span class="text-muted" style="font-weight:400;text-transform:none;letter-spacing:0">— 오늘 진짜 중요한 셋</span></h6>
+      <p class="text-muted" style="font-size:13px;margin-top:0;margin-bottom:var(--space-3)">각각 소요시간을 정하면 블록 높이가 된다.</p>
+      <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+        <div class="card" style="flex-direction:row;align-items:center;gap:var(--space-2);border-left:4px solid var(--cat1)">
+          <div style="flex:1"><div class="card-kicker">01 · 집중</div><div class="card-title" style="font-size:16px">이력서 수정</div></div>
+          <span class="tag tag-accent">90분</span>
+        </div>
+        <div class="card" style="flex-direction:row;align-items:center;gap:var(--space-2);border-left:4px solid var(--cat2)">
+          <div style="flex:1"><div class="card-kicker" style="color:var(--color-accent-2)">02 · 준비</div><div class="card-title" style="font-size:16px">면접 스터디</div></div>
+          <span class="tag tag-accent-2">60분</span>
+        </div>
+        <div class="card" style="flex-direction:row;align-items:center;gap:var(--space-2);border-left:4px solid var(--cat3)">
+          <div style="flex:1"><div class="card-kicker" style="color:var(--color-neutral-700)">03 · 작업</div><div class="card-title" style="font-size:16px">포트폴리오 리팩터</div></div>
+          <span class="tag tag-neutral">90분</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px dashed var(--color-divider);border-radius:var(--radius-md);color:color-mix(in srgb,var(--color-text) 45%,transparent);font-size:13px">3개 채움 · 4번째는 하나를 내려야 올라온다</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--space-4)">
+        <h6 style="margin:0">타임박스 · 06 – 22시</h6>
+        <div style="display:flex;align-items:center;gap:var(--space-4);font-size:12px" class="text-muted">
+          <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:var(--color-accent)"></span>완료</span>
+          <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:var(--color-accent);opacity:.5"></span>부분</span>
+          <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border:1px dashed var(--color-neutral-500)"></span>이월</span>
+        </div>
+      </div>
+      <div style="position:relative;height:714px">
+        <div class="tb-hourline" style="top:0"><span>06:00</span></div>
+        <div class="tb-hourline" style="top:42px"><span>07:00</span></div>
+        <div class="tb-hourline" style="top:84px"><span>08:00</span></div>
+        <div class="tb-hourline" style="top:126px"><span>09:00</span></div>
+        <div class="tb-hourline" style="top:168px"><span>10:00</span></div>
+        <div class="tb-hourline" style="top:210px"><span>11:00</span></div>
+        <div class="tb-hourline" style="top:252px"><span>12:00</span></div>
+        <div class="tb-hourline" style="top:294px"><span>13:00</span></div>
+        <div class="tb-hourline" style="top:336px"><span>14:00</span></div>
+        <div class="tb-hourline" style="top:378px"><span>15:00</span></div>
+        <div class="tb-hourline" style="top:420px"><span>16:00</span></div>
+        <div class="tb-hourline" style="top:462px"><span>17:00</span></div>
+        <div class="tb-hourline" style="top:504px"><span>18:00</span></div>
+        <div class="tb-hourline" style="top:546px"><span>19:00</span></div>
+        <div class="tb-hourline" style="top:588px"><span>20:00</span></div>
+        <div class="tb-hourline" style="top:630px"><span>21:00</span></div>
+        <div class="tb-hourline" style="top:672px"><span>22:00</span></div>
+        <div style="position:absolute;left:44px;right:0;top:399px;border-top:1.5px solid var(--color-accent-2);z-index:3"><span style="position:absolute;left:12px;top:-8px;font-size:10px;background:var(--color-accent-2);color:var(--color-bg);padding:1px 5px;letter-spacing:.04em">지금 14:30</span></div>
+
+        <div class="tb-block" style="top:84px;height:61px;border-left:4px solid var(--cat1);background:var(--color-surface)"><div style="padding:7px 10px"><div style="font-family:var(--font-heading);font-weight:600;font-size:14px">이력서 수정</div><div class="text-muted" style="font-size:11px;margin-top:2px">08:00–09:30 · 90분 · 계획됨</div></div></div>
+        <div class="tb-block" style="top:168px;height:40px;border-left:4px solid var(--cat2);background:var(--color-surface)"><div style="padding:6px 10px"><div style="font-family:var(--font-heading);font-weight:600;font-size:14px">면접 스터디</div><div class="text-muted" style="font-size:11px">10:00–11:00 · 60분</div></div></div>
+        <div class="tb-block" style="top:336px;height:61px;border-left:4px solid var(--cat3);background:var(--color-surface)"><div style="padding:7px 10px"><div style="font-family:var(--font-heading);font-weight:600;font-size:14px">포트폴리오 리팩터</div><div class="text-muted" style="font-size:11px;margin-top:2px">14:00–15:30 · 90분 · 계획됨</div></div></div>
+        <div class="tb-block" style="top:273px;height:31px;border-left:4px solid var(--cat4);background:var(--color-surface)"><div style="padding:5px 10px"><div style="font-family:var(--font-heading);font-weight:600;font-size:13px">점심 · 산책</div></div></div>
+      </div>
+      <p class="text-muted" style="font-size:12px;margin-top:var(--space-4);max-width:56ch">TOP 3를 먼저 시간 위에 놓고, 남는 시간에 나머지를 끼워 넣는다. 겹치면 배치되지 않는다.</p>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ══════════ SCREEN: 저녁 기록 ══════════ -->
+  <sc-if value="{{ isEve }}">
+  <div data-screen-label="저녁 기록" style="display:grid;grid-template-columns:352px 1fr;gap:var(--space-8);align-items:start">
+    <div>
+      <h6 style="margin-bottom:var(--space-3)">오늘의 기록</h6>
+      <div style="display:flex;gap:var(--space-4);margin-bottom:var(--space-6)">
+        <div><div style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1;color:var(--color-accent)">3</div><div class="text-muted" style="font-size:12px;margin-top:4px">완료</div></div>
+        <div><div style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1;color:var(--color-accent-2)">1</div><div class="text-muted" style="font-size:12px;margin-top:4px">부분</div></div>
+        <div><div style="font-family:var(--font-heading);font-weight:600;font-size:34px;line-height:1;color:var(--color-neutral-500)">1</div><div class="text-muted" style="font-size:12px;margin-top:4px">이월</div></div>
+      </div>
+
+      <h6 style="margin-bottom:var(--space-2)">TOP 3 결과</h6>
+      <div style="display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-6)">
+        <div style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px"><span style="width:9px;height:9px;background:var(--cat1);flex:none"></span><span style="flex:1">이력서 수정</span><span class="tag tag-accent">완료</span></div>
+        <div style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px"><span style="width:9px;height:9px;background:var(--cat2);flex:none"></span><span style="flex:1">면접 스터디</span><span class="tag tag-accent-2">부분</span></div>
+        <div style="display:flex;align-items:center;gap:var(--space-2);padding:6px 4px"><span style="width:9px;height:9px;background:var(--cat3);flex:none"></span><span style="flex:1">포트폴리오 리팩터</span><span class="tag tag-accent">완료</span></div>
+      </div>
+
+      <div class="card elev-sm" style="border-left:4px solid var(--color-accent);gap:var(--space-3)">
+        <div><div class="card-kicker">상태 기록 · 편집 중</div><div class="card-title" style="font-size:17px">면접 스터디 · 10:00</div></div>
+        <div class="seg" role="radiogroup" aria-label="블록 상태">
+          <label class="seg-opt"><input type="radio" name="ev-status"><span>완료</span></label>
+          <label class="seg-opt"><input type="radio" name="ev-status" defaultChecked><span>부분</span></label>
+          <label class="seg-opt"><input type="radio" name="ev-status"><span>이월</span></label>
+        </div>
+        <button type="button" class="btn btn-secondary btn-block" style="margin-top:0">＋ 이 시간의 사진 추가</button>
+        <p class="text-muted" style="font-size:12px;margin:0">블록을 눌러 완료 / 부분 / 이월을 기록하고, 그 시간의 사진을 채운다.</p>
+      </div>
+
+      <h6 style="margin-top:var(--space-6);margin-bottom:var(--space-2)">한 줄 회고</h6>
+      <div class="field"><textarea class="input" rows="3" placeholder="오늘 하루를 한 줄로. (예: 오전 집중이 좋았다)"></textarea></div>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--space-4)">
+        <h6 style="margin:0">보낸 하루 · 사진으로 채운 그리드</h6>
+        <button type="button" class="btn btn-primary">이미지로 저장</button>
+      </div>
+      <div style="position:relative;height:714px">
+        <div class="tb-hourline" style="top:0"><span>06:00</span></div>
+        <div class="tb-hourline" style="top:42px"><span>07:00</span></div>
+        <div class="tb-hourline" style="top:84px"><span>08:00</span></div>
+        <div class="tb-hourline" style="top:126px"><span>09:00</span></div>
+        <div class="tb-hourline" style="top:168px"><span>10:00</span></div>
+        <div class="tb-hourline" style="top:210px"><span>11:00</span></div>
+        <div class="tb-hourline" style="top:252px"><span>12:00</span></div>
+        <div class="tb-hourline" style="top:294px"><span>13:00</span></div>
+        <div class="tb-hourline" style="top:336px"><span>14:00</span></div>
+        <div class="tb-hourline" style="top:378px"><span>15:00</span></div>
+        <div class="tb-hourline" style="top:420px"><span>16:00</span></div>
+        <div class="tb-hourline" style="top:462px"><span>17:00</span></div>
+        <div class="tb-hourline" style="top:504px"><span>18:00</span></div>
+        <div class="tb-hourline" style="top:546px"><span>19:00</span></div>
+        <div class="tb-hourline" style="top:588px"><span>20:00</span></div>
+        <div class="tb-hourline" style="top:630px"><span>21:00</span></div>
+        <div class="tb-hourline" style="top:672px"><span>22:00</span></div>
+
+        <!-- 08:00 이력서 · 완료 + 사진 -->
+        <div class="tb-block" style="top:84px;height:61px;border-left:4px solid var(--cat1)">
+          <div class="halftone" style="position:absolute;inset:0;background:var(--color-surface)"><image-slot id="ev-resume" shape="rect" placeholder="이력서 작업 사진"></image-slot></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;padding:3px 8px;background:color-mix(in srgb,var(--color-bg) 86%,transparent)"><span style="font-family:var(--font-heading);font-weight:600;font-size:13px;flex:1">이력서 수정</span><span style="font-size:11px" class="text-muted">08:00–09:30</span><span class="tag tag-accent">완료</span></div>
+        </div>
+
+        <!-- 10:00 스터디 · 부분 + 사진 · 선택됨 -->
+        <div class="tb-block" style="top:168px;height:40px;border-left:4px solid var(--cat2);box-shadow:0 0 0 2px var(--color-accent);z-index:2">
+          <div class="halftone" style="position:absolute;inset:0;background:var(--color-surface)"><image-slot id="ev-study" shape="rect" placeholder="스터디 사진"></image-slot></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;padding:3px 8px;background:color-mix(in srgb,var(--color-bg) 86%,transparent)"><span style="font-family:var(--font-heading);font-weight:600;font-size:13px;flex:1">면접 스터디</span><span class="tag tag-accent-2">부분</span></div>
+        </div>
+
+        <!-- 12:30 점심 · 완료 + 사진 -->
+        <div class="tb-block" style="top:273px;height:31px;border-left:4px solid var(--cat4)">
+          <div class="halftone" style="position:absolute;inset:0;background:var(--color-surface)"><image-slot id="ev-lunch" shape="rect" placeholder="점심 사진"></image-slot></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;padding:2px 8px;background:color-mix(in srgb,var(--color-bg) 86%,transparent)"><span style="font-family:var(--font-heading);font-weight:600;font-size:12px;flex:1">점심 · 산책</span><span class="tag tag-neutral">완료</span></div>
+        </div>
+
+        <!-- 14:00 포트폴리오 · 완료 + 사진 -->
+        <div class="tb-block" style="top:336px;height:61px;border-left:4px solid var(--cat3)">
+          <div class="halftone" style="position:absolute;inset:0;background:var(--color-surface)"><image-slot id="ev-port" shape="rect" placeholder="작업 화면 사진"></image-slot></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;padding:3px 8px;background:color-mix(in srgb,var(--color-bg) 86%,transparent)"><span style="font-family:var(--font-heading);font-weight:600;font-size:13px;flex:1">포트폴리오 리팩터</span><span style="font-size:11px" class="text-muted">14:00–15:30</span><span class="tag tag-neutral">완료</span></div>
+        </div>
+
+        <!-- 16:30 장보기 · 완료 + 사진 -->
+        <div class="tb-block" style="top:441px;height:28px;border-left:4px solid var(--cat5)">
+          <div class="halftone" style="position:absolute;inset:0;background:var(--color-surface)"><image-slot id="ev-market" shape="rect" placeholder="장보기 사진"></image-slot></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;padding:1px 8px;background:color-mix(in srgb,var(--color-bg) 86%,transparent)"><span style="font-family:var(--font-heading);font-weight:600;font-size:12px;flex:1">장보기</span><span class="tag tag-neutral">완료</span></div>
+        </div>
+
+        <!-- 18:00 운동 · 이월 -->
+        <div class="tb-block" style="top:504px;height:31px;border-left:4px dashed var(--color-neutral-500);background:transparent;box-shadow:none;border-top:1px dashed var(--color-divider);border-right:1px dashed var(--color-divider);border-bottom:1px dashed var(--color-divider)">
+          <div style="padding:6px 10px;display:flex;align-items:center;gap:8px"><span class="text-muted" style="font-family:var(--font-heading);font-weight:600;font-size:13px;flex:1">운동</span><span class="text-muted" style="font-size:12px">→ 내일로 이월</span></div>
+        </div>
+      </div>
+      <p class="text-muted" style="font-size:12px;margin-top:var(--space-4);max-width:56ch">실행한 블록에 그 시간의 사진을 채우면 하루가 앨범이 된다. <span style="color:var(--color-text)">이월(moved)</span>은 빨간 실패가 아니라 다음 날로 옮긴 기록 — 결과물은 성취를 보여주되 실패를 전시하지 않는다.</p>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { screen: 'plan' };
+  renderVals() {
+    const s = this.state.screen;
+    return {
+      isPlan: s === 'plan',
+      isEve: s === 'evening',
+      goPlan: () => this.setState({ screen: 'plan' }),
+      goEve: () => this.setState({ screen: 'evening' }),
+      planBtnClass: s === 'plan' ? 'btn btn-primary' : 'btn btn-secondary',
+      eveBtnClass: s === 'evening' ? 'btn btn-primary' : 'btn btn-secondary',
+    };
+  }
+}
+</script>
+</body>
+</html>

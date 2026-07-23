@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2a2a2a;--paper:#fff;--canvas:#efece6;--muted:#8a857a;--line:#d8d3c8;--c1:#c96f4a;--c2:#7d9471;--c3:#cf9f3e;--c4:#6b8caf;--c5:#a5799b;--t1:#f3ddd2;--t2:#dde6d6;--t3:#f4e8cb;--t4:#d8e2ec;--t5:#ecdde8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);font-family:'Gaegu',system-ui,sans-serif;color:var(--ink);font-size:15px}
+a{color:#2a78d6;text-decoration:none}a:hover{color:#1b5fb0}
+.dv-turn{padding:44px 48px 36px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.dv-tid{font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:700 15px/1.2 'Gaegu',sans-serif;color:#1a1a1a}
+.dv-sub{margin:0 0 22px;font-size:14px;color:var(--muted);max-width:720px}
+.dv-opts{display:flex;flex-wrap:wrap;gap:38px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:12px;scroll-margin-top:16px}
+.dv-oid{font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:9px;font-size:14px;color:rgba(0,0,0,.6);max-width:600px}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:26px 0 0;font-size:14px;color:rgba(0,0,0,.55)}
+.frames{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
+.frame{display:flex;flex-direction:column;gap:8px}
+.flabel{font-size:13px;color:var(--muted);font-weight:700;max-width:260px}
+.desk{background:var(--paper);border:2.5px solid var(--ink);border-radius:14px 11px 14px 12px;overflow:hidden;box-shadow:5px 6px 0 rgba(0,0,0,.1)}
+.deskbar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:2px solid var(--ink);background:#f6f3ee}
+.dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink)}
+.phone{width:236px;background:var(--paper);border:2.5px solid var(--ink);border-radius:30px;overflow:hidden;box-shadow:5px 6px 0 rgba(0,0,0,.1)}
+.ptop{height:26px;display:flex;justify-content:center;align-items:center}
+.notch{width:74px;height:8px;border-radius:6px;background:var(--ink)}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:10px 8px 11px 9px}
+.photo{background:repeating-linear-gradient(45deg,#e7e3db,#e7e3db 6px,#f1ede6 6px,#f1ede6 12px);display:flex;align-items:center;justify-content:center;color:#9a9488;font-size:11px}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--ink);border-radius:20px;padding:0 9px;font-size:13px;background:#fff;white-space:nowrap}
+.btn{border:2px solid var(--ink);border-radius:8px 6px 9px 7px;padding:5px 13px;font-size:14px;font-weight:700;background:#fff;display:inline-flex;align-items:center;gap:5px}
+.li{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:14px}
+.box{width:14px;height:14px;border:2px solid var(--ink);border-radius:4px 3px 4px 3px;flex:none}
+.grid{position:relative}
+.hrow{position:absolute;left:0;right:0;border-top:1.5px dashed var(--line)}
+.hrow b{position:absolute;left:0;top:-9px;font-size:11px;font-weight:400;color:#a49e92;background:var(--paper);padding-right:5px}
+.blk{position:absolute;border:2px solid var(--ink);border-radius:7px 5px 8px 6px;padding:2px 7px;font-size:13px;overflow:hidden;line-height:1.15}
+.tag{position:absolute;top:0;right:0;font-size:12px;font-weight:700;padding:0 5px;color:#fff;border-radius:0 5px 0 7px}
+.tab{flex:1;text-align:center;padding:6px 0;font-size:13px;font-weight:700}
+.nav{display:flex;border-top:2px solid var(--ink)}
+.navi{flex:1;text-align:center;padding:7px 0;font-size:12px;color:var(--muted)}
+.avatar{width:30px;height:30px;border-radius:50%;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:#f1ede6;flex:none}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">타임박싱 플래너 — 세 방향</span></div>
+<p class="dv-sub">모두 좌→우 흐름(쏟아내기 → TOP3 → 시간 배치 → 사진·상태 기록)을 담되, <b>시간 그리드 형태</b>(세로 타임라인 vs 블록 카드)와 <b>레이아웃 구조</b>(좌우 분할 vs 상하·피드 vs 탭)를 다르게 탐색합니다. 사진 자리는 빗금 박스, 상태는 ✓완료 ◐부분 →이월(moved).</p>
+<div class="dv-opts">
+
+<!-- ============ 1a ============ -->
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a><span><b>노트</b> · 좌우 분할 + 세로 타임라인 — 종이 타임박싱 노트 그대로. 좌: 리스트·TOP3 / 우: 시간축. 데스크톱 기준, 모바일은 탭 전환.</span></div>
+<div class="frames">
+
+  <div class="frame">
+    <div class="desk" style="width:576px">
+      <div class="deskbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px;font-size:12px;color:var(--muted)">아침 계획</span></div>
+      <div style="display:flex">
+        <div style="width:222px;padding:12px 13px;border-right:2px dashed var(--line)">
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:17px;font-weight:700">9월 12일 (금)<span style="font-size:15px;color:var(--muted)">‹ ›</span></div>
+          <div style="font-size:12px;color:var(--muted);margin:10px 0 3px;font-weight:700">쏟아내기 · Brain dump</div>
+          <div class="li"><span class="box"></span>이력서 수정</div>
+          <div class="li"><span class="box"></span>면접 스터디</div>
+          <div class="li"><span class="box"></span>운동</div>
+          <div class="li"><span class="box"></span>장보기</div>
+          <div class="li"><span class="box"></span>포트폴리오 리팩터</div>
+          <div style="border:1.5px dashed var(--ink);border-radius:7px;padding:4px 8px;font-size:13px;color:var(--muted);margin-top:5px">＋ 할 일 추가…</div>
+          <div style="border-top:2px solid var(--ink);margin:12px 0 8px"></div>
+          <div style="font-size:13px;font-weight:700">TOP 3 <span style="font-size:11px;color:var(--muted);font-weight:400">가장 중요한 셋</span></div>
+          <div class="card" style="display:flex;align-items:center;gap:7px;padding:5px 8px;margin-top:6px;border-left:6px solid var(--c1)"><b style="flex:1">이력서 수정</b><span class="chip">90분</span></div>
+          <div class="card" style="display:flex;align-items:center;gap:7px;padding:5px 8px;margin-top:6px;border-left:6px solid var(--c4)"><b style="flex:1">면접 스터디</b><span class="chip">60분</span></div>
+          <div class="card" style="display:flex;align-items:center;gap:7px;padding:5px 8px;margin-top:6px;border-left:6px solid var(--c2)"><b style="flex:1">운동</b><span class="chip">45분</span></div>
+        </div>
+        <div style="flex:1;padding:12px 14px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:14px">타임박스<span style="color:var(--muted);font-weight:400">지금 08:20</span></div>
+          <div class="grid" style="height:288px">
+            <div class="hrow" style="top:0"><b>06</b></div><div class="hrow" style="top:32px"><b>07</b></div><div class="hrow" style="top:64px"><b>08</b></div><div class="hrow" style="top:96px"><b>09</b></div><div class="hrow" style="top:128px"><b>10</b></div><div class="hrow" style="top:160px"><b>11</b></div><div class="hrow" style="top:192px"><b>12</b></div><div class="hrow" style="top:224px"><b>13</b></div><div class="hrow" style="top:256px"><b>14</b></div>
+            <div class="blk" style="top:64px;height:46px;left:34px;right:6px;background:var(--t1);border-left:6px solid var(--c1)"><b>이력서 수정</b><div style="font-size:11px;color:var(--muted)">08:00–09:30 · 90분</div></div>
+            <div class="blk" style="top:128px;height:30px;left:34px;right:6px;background:var(--t4);border-left:6px solid var(--c4)"><b>면접 스터디</b></div>
+            <div class="blk" style="top:224px;height:24px;left:34px;right:6px;background:var(--t2);border-left:6px solid var(--c2)"><b>운동</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flabel">① 아침 — 쏟아내고 → TOP3 고르고(소요시간) → 우측에 블록으로 배치. 블록 높이 = 소요시간.</div>
+  </div>
+
+  <div class="frame">
+    <div class="desk" style="width:308px">
+      <div class="deskbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px;font-size:12px;color:var(--muted)">저녁 기록</span></div>
+      <div style="padding:12px 14px 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:14px">오늘 하루<span class="chip">이미지 저장 ⤓</span></div>
+        <div class="grid" style="height:288px">
+          <div class="hrow" style="top:0"><b>06</b></div><div class="hrow" style="top:32px"><b>07</b></div><div class="hrow" style="top:64px"><b>08</b></div><div class="hrow" style="top:96px"><b>09</b></div><div class="hrow" style="top:128px"><b>10</b></div><div class="hrow" style="top:160px"><b>11</b></div><div class="hrow" style="top:192px"><b>12</b></div><div class="hrow" style="top:224px"><b>13</b></div><div class="hrow" style="top:256px"><b>14</b></div>
+          <div class="blk" style="top:64px;height:46px;left:34px;right:6px;padding:0;border-left:6px solid var(--c1)"><div class="photo" style="position:absolute;inset:0">사진</div><div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.86);font-size:12px;padding:0 6px;border-top:1.5px solid var(--ink)">이력서 수정</div><div class="tag" style="background:var(--c2)">✓</div></div>
+          <div class="blk" style="top:128px;height:30px;left:34px;right:6px;padding:0;border-left:6px solid var(--c4)"><div class="photo" style="position:absolute;inset:0">사진</div><div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.86);font-size:12px;padding:0 6px;border-top:1.5px solid var(--ink)">면접 스터디</div><div class="tag" style="background:var(--c3)">◐</div></div>
+          <div class="blk" style="top:192px;height:22px;left:34px;right:6px;padding:0;border-left:6px solid var(--c5)"><div class="photo" style="position:absolute;inset:0">사진</div><div class="tag" style="background:var(--c2)">✓</div></div>
+          <div class="blk" style="top:224px;height:24px;left:34px;right:6px;border-style:dashed;background:#faf8f4;color:var(--muted)"><b>운동</b> <span style="float:right;font-size:11px">→ 내일</span></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:9px;line-height:1.3">실행한 블록에 그 시간의 사진. <b style="color:var(--ink)">moved</b>는 빨간 실패가 아니라 이월.</div>
+      </div>
+    </div>
+    <div class="flabel">② 저녁 — 사진으로 채운 하루. ✓완료 ◐부분 →이월. 그대로 이미지로 저장.</div>
+  </div>
+
+  <div class="frame">
+    <div class="phone">
+      <div class="ptop"><span class="notch"></span></div>
+      <div style="padding:2px 12px 0"><div style="display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:700">9/12 금<span class="chip" style="font-size:12px">저장 ⤓</span></div>
+        <div style="display:flex;border:2px solid var(--ink);border-radius:8px;overflow:hidden;margin:9px 0 11px"><div class="tab" style="color:var(--muted)">계획</div><div class="tab" style="background:var(--ink);color:#fff">그리드</div></div>
+        <div class="grid" style="height:186px">
+          <div class="hrow" style="top:0"><b>08</b></div><div class="hrow" style="top:37px"><b>09</b></div><div class="hrow" style="top:74px"><b>10</b></div><div class="hrow" style="top:111px"><b>11</b></div><div class="hrow" style="top:148px"><b>12</b></div>
+          <div class="blk" style="top:0;height:52px;left:32px;right:2px;padding:0;border-left:6px solid var(--c1)"><div class="photo" style="position:absolute;inset:0">사진</div><div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.86);font-size:11px;padding:0 5px;border-top:1.5px solid var(--ink)">이력서 수정</div><div class="tag" style="background:var(--c2)">✓</div></div>
+          <div class="blk" style="top:74px;height:34px;left:32px;right:2px;padding:0;border-left:6px solid var(--c4)"><div class="photo" style="position:absolute;inset:0">사진</div><div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.86);font-size:11px;padding:0 5px;border-top:1.5px solid var(--ink)">스터디</div><div class="tag" style="background:var(--c3)">◐</div></div>
+        </div>
+      </div>
+      <div class="nav" style="margin-top:10px"><div class="navi" style="color:var(--ink);font-weight:700">오늘</div><div class="navi">주간</div><div class="navi">서클</div></div>
+    </div>
+    <div class="flabel">③ 모바일 — 좌우가 좁으니 [계획 / 그리드] 탭으로 전환. 사진 촬영은 모바일에서.</div>
+  </div>
+
+</div>
+</div>
+
+<!-- ============ 1b ============ -->
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a><span><b>앨범</b> · 상하 분할 + 블록 카드 — TOP3를 크게, 하루를 사진 카드 피드로. "계획표가 아니라 하루의 앨범" 콘셉트에 가장 가깝게.</span></div>
+<div class="frames">
+
+  <div class="frame">
+    <div class="desk" style="width:560px">
+      <div class="deskbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px;font-size:12px;color:var(--muted)">오늘 · 카드형</span></div>
+      <div style="padding:13px 15px 15px">
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:7px">TOP 3</div>
+        <div style="display:flex;gap:10px">
+          <div class="card" style="flex:1;overflow:hidden"><div style="height:5px;background:var(--c1)"></div><div style="padding:7px 9px"><b>이력서 수정</b><div style="font-size:12px;color:var(--muted)">90분</div><div class="photo" style="height:48px;border-radius:6px;margin-top:6px">사진</div></div></div>
+          <div class="card" style="flex:1;overflow:hidden"><div style="height:5px;background:var(--c4)"></div><div style="padding:7px 9px"><b>면접 스터디</b><div style="font-size:12px;color:var(--muted)">60분</div><div class="photo" style="height:48px;border-radius:6px;margin-top:6px">사진</div></div></div>
+          <div class="card" style="flex:1;overflow:hidden"><div style="height:5px;background:var(--c2)"></div><div style="padding:7px 9px"><b>운동</b><div style="font-size:12px;color:var(--muted)">45분</div><div class="photo" style="height:48px;border-radius:6px;margin-top:6px">사진</div></div></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin:14px 0 7px">타임라인 →</div>
+        <div style="display:flex;gap:9px;overflow:hidden">
+          <div class="card" style="width:104px;flex:none"><div class="photo" style="height:66px;border-radius:8px 6px 0 0">사진</div><div style="padding:4px 7px"><div style="font-size:11px;color:var(--muted)">08:00</div><b style="font-size:13px">이력서</b> <span style="color:var(--c2);font-weight:700">✓</span></div></div>
+          <div class="card" style="width:104px;flex:none"><div class="photo" style="height:66px;border-radius:8px 6px 0 0">사진</div><div style="padding:4px 7px"><div style="font-size:11px;color:var(--muted)">10:00</div><b style="font-size:13px">스터디</b> <span style="color:var(--c3);font-weight:700">◐</span></div></div>
+          <div class="card" style="width:104px;flex:none"><div class="photo" style="height:66px;border-radius:8px 6px 0 0">사진</div><div style="padding:4px 7px"><div style="font-size:11px;color:var(--muted)">12:00</div><b style="font-size:13px">점심</b> <span style="color:var(--c2);font-weight:700">✓</span></div></div>
+          <div class="card" style="width:104px;flex:none;border-style:dashed;opacity:.7"><div style="height:66px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">→ 내일</div><div style="padding:4px 7px"><div style="font-size:11px;color:var(--muted)">13:00</div><b style="font-size:13px">운동</b></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="flabel">① 데스크톱 — TOP3 카드 위, 하루는 시간순 사진 카드. 시간축이 세로선이 아니라 카드 흐름.</div>
+  </div>
+
+  <div class="frame">
+    <div class="phone">
+      <div class="ptop"><span class="notch"></span></div>
+      <div style="padding:2px 11px 0"><div style="display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:700">9월 12일 금<span class="chip" style="font-size:12px">공유</span></div>
+        <div class="card" style="margin-top:10px;overflow:hidden"><div class="photo" style="height:96px">사진</div><div style="padding:6px 9px;display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:var(--c1);flex:none"></span><span style="font-size:11px;color:var(--muted)">08:00</span><b style="flex:1">이력서 수정</b><span style="color:var(--c2);font-weight:700">✓</span></div></div>
+        <div class="card" style="margin-top:9px;overflow:hidden"><div class="photo" style="height:96px">사진</div><div style="padding:6px 9px;display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:var(--c4);flex:none"></span><span style="font-size:11px;color:var(--muted)">10:00</span><b style="flex:1">면접 스터디</b><span style="color:var(--c3);font-weight:700">◐</span></div></div>
+      </div>
+      <div class="nav" style="margin-top:10px"><div class="navi" style="color:var(--ink);font-weight:700">오늘</div><div class="navi">주간</div><div class="navi">서클</div></div>
+    </div>
+    <div class="flabel">② 모바일 — 스토리처럼 세로로 넘기는 사진 피드. 이게 곧 '일기'이자 공유물.</div>
+  </div>
+
+  <div class="frame">
+    <div class="desk" style="width:400px">
+      <div class="deskbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:8px;font-size:12px;color:var(--muted)">주간 모아보기</span></div>
+      <div style="padding:13px 14px 15px"><div style="font-size:13px;font-weight:700;margin-bottom:10px">이번 주 · 9/8 – 9/14</div>
+        <div style="display:flex;gap:7px">
+          <div style="flex:1"><div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:4px">월</div><div class="card" style="height:96px;padding:4px;display:flex;flex-direction:column;gap:3px"><div style="height:16px;background:var(--t1);border-radius:3px"></div><div class="photo" style="height:22px;border-radius:3px;font-size:9px">사진</div><div style="height:12px;background:var(--t2);border-radius:3px"></div></div></div>
+          <div style="flex:1"><div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:4px">화</div><div class="card" style="height:96px;padding:4px;display:flex;flex-direction:column;gap:3px"><div style="height:14px;background:var(--t4);border-radius:3px"></div><div class="photo" style="height:20px;border-radius:3px;font-size:9px">사진</div><div class="photo" style="height:18px;border-radius:3px;font-size:9px">사진</div></div></div>
+          <div style="flex:1"><div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:4px">수</div><div class="card" style="height:96px;padding:4px;display:flex;flex-direction:column;gap:3px"><div style="height:18px;background:var(--t3);border-radius:3px"></div><div style="height:14px;background:var(--t2);border-radius:3px"></div><div style="height:14px;border:1.5px dashed var(--line);border-radius:3px"></div></div></div>
+          <div style="flex:1"><div style="text-align:center;font-size:11px;font-weight:700;margin-bottom:4px">목</div><div class="card" style="height:96px;padding:4px;display:flex;flex-direction:column;gap:3px;border-width:2.5px"><div class="photo" style="height:28px;border-radius:3px;font-size:9px">사진</div><div style="height:14px;background:var(--t1);border-radius:3px"></div><div class="photo" style="height:22px;border-radius:3px;font-size:9px">사진</div></div></div>
+          <div style="flex:1"><div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:4px">금</div><div class="card" style="height:96px;padding:4px;display:flex;flex-direction:column;gap:3px"><div style="height:16px;background:var(--t1);border-radius:3px"></div><div class="photo" style="height:20px;border-radius:3px;font-size:9px">사진</div><div style="height:12px;background:var(--t5);border-radius:3px"></div></div></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:9px">한 주가 작은 그리드로 늘어선다 → 회고 · 공유 단위.</div>
+      </div>
+    </div>
+    <div class="flabel">③ 주간 모아보기 — 하루 그리드의 미니 썸네일 7개. 사진이 쌓일수록 이탈 비용↑.</div>
+  </div>
+
+</div>
+</div>
+
+<!-- ============ 1c ============ -->
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a><span><b>서클</b> · 탭 + 모바일 우선 + 세로 타임라인 — 하단 탭(오늘/주간/서클) 중심. 친구 플래너 보기와 TOP3 교체 모달까지.</span></div>
+<div class="frames">
+
+  <div class="frame">
+    <div class="phone">
+      <div class="ptop"><span class="notch"></span></div>
+      <div style="padding:2px 12px 0">
+        <div style="font-size:15px;font-weight:700;margin-bottom:2px">오늘 계획</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin:8px 0 3px">쏟아내기</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px"><span class="chip" style="font-size:12px">이력서 수정</span><span class="chip" style="font-size:12px">스터디</span><span class="chip" style="font-size:12px">운동</span><span class="chip" style="font-size:12px">장보기</span><span class="chip" style="font-size:12px;border-style:dashed;color:var(--muted)">＋</span></div>
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin:11px 0 5px">TOP 3</div>
+        <div class="card" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-left:6px solid var(--c1);margin-bottom:5px"><b style="flex:1">이력서 수정</b><span class="chip" style="font-size:12px">90분</span></div>
+        <div class="card" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-left:6px solid var(--c4);margin-bottom:5px"><b style="flex:1">면접 스터디</b><span class="chip" style="font-size:12px">60분</span></div>
+        <div class="card" style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-left:6px solid var(--c2)"><b style="flex:1">운동</b><span class="chip" style="font-size:12px">45분</span></div>
+        <div class="btn" style="width:100%;justify-content:center;margin:11px 0 3px">그리드로 배치 →</div>
+      </div>
+      <div class="nav"><div class="navi" style="color:var(--ink);font-weight:700">오늘</div><div class="navi">주간</div><div class="navi">서클</div></div>
+    </div>
+    <div class="flabel">① 계획 탭 — 쏟아내기(칩) → TOP3 → 배치 버튼.</div>
+  </div>
+
+  <div class="frame">
+    <div class="phone">
+      <div class="ptop"><span class="notch"></span></div>
+      <div style="padding:2px 12px 0"><div style="display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:700">타임박스<span class="chip" style="font-size:12px">저장 ⤓</span></div>
+        <div class="grid" style="height:222px;margin-top:10px">
+          <div class="hrow" style="top:0"><b>08</b></div><div class="hrow" style="top:37px"><b>09</b></div><div class="hrow" style="top:74px"><b>10</b></div><div class="hrow" style="top:111px"><b>11</b></div><div class="hrow" style="top:148px"><b>12</b></div><div class="hrow" style="top:185px"><b>13</b></div>
+          <div class="blk" style="top:0;height:52px;left:32px;right:2px;padding:0;border-left:6px solid var(--c1)"><div class="photo" style="position:absolute;inset:0">사진</div><div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.86);font-size:11px;padding:0 5px;border-top:1.5px solid var(--ink)">이력서 수정</div><div class="tag" style="background:var(--c2)">✓</div></div>
+          <div class="blk" style="top:74px;height:34px;left:32px;right:2px;padding:0;border-left:6px solid var(--c4)"><div class="photo" style="position:absolute;inset:0">사진</div><div style="position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.86);font-size:11px;padding:0 5px;border-top:1.5px solid var(--ink)">스터디</div><div class="tag" style="background:var(--c3)">◐</div></div>
+          <div class="blk" style="top:185px;height:28px;left:32px;right:2px;border-style:dashed;background:#faf8f4;color:var(--muted)"><b>운동</b><span style="float:right;font-size:11px">→내일</span></div>
+        </div>
+      </div>
+      <div class="nav" style="margin-top:10px"><div class="navi" style="color:var(--ink);font-weight:700">오늘</div><div class="navi">주간</div><div class="navi">서클</div></div>
+    </div>
+    <div class="flabel">② 그리드 탭 — 세로 타임라인 + 사진. 탭으로 계획↔그리드 이동.</div>
+  </div>
+
+  <div class="frame">
+    <div class="phone">
+      <div class="ptop"><span class="notch"></span></div>
+      <div style="padding:2px 12px 0"><div style="display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:700">우리 서클<span class="chip" style="font-size:11px;border-style:dashed">비공개</span></div>
+        <div style="font-size:12px;color:var(--muted);margin:3px 0 9px">오늘 5명 중 3명 기록함</div>
+        <div class="card" style="display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:7px"><span class="avatar">지</span><div style="flex:1"><b>지민</b><div style="display:flex;gap:3px;margin-top:3px"><span style="width:16px;height:9px;background:var(--t1);border-radius:2px"></span><span style="width:12px;height:9px;background:var(--t4);border-radius:2px"></span><span class="photo" style="width:14px;height:9px;border-radius:2px"></span><span style="width:10px;height:9px;background:var(--t2);border-radius:2px"></span></div></div><span style="color:var(--c2);font-weight:700">✓</span></div>
+        <div class="card" style="display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:7px"><span class="avatar">현</span><div style="flex:1"><b>현우</b><div style="display:flex;gap:3px;margin-top:3px"><span class="photo" style="width:16px;height:9px;border-radius:2px"></span><span style="width:12px;height:9px;background:var(--t3);border-radius:2px"></span><span style="width:14px;height:9px;background:var(--t5);border-radius:2px"></span></div></div><span style="color:var(--c3);font-weight:700">◐</span></div>
+        <div class="card" style="display:flex;align-items:center;gap:8px;padding:7px 9px;opacity:.55"><span class="avatar">수</span><div style="flex:1"><b>수아</b><div style="font-size:11px;color:var(--muted);margin-top:2px">아직 기록 전</div></div></div>
+        <div class="btn" style="width:100%;justify-content:center;border-style:dashed;margin-top:10px">＋ 친구 초대</div>
+      </div>
+      <div class="nav" style="margin-top:9px"><div class="navi">오늘</div><div class="navi">주간</div><div class="navi" style="color:var(--ink);font-weight:700">서클</div></div>
+    </div>
+    <div class="flabel">③ 서클 탭 — 3~5명 프라이빗. 친구의 하루 그리드 썸네일. 랭킹·좋아요 없음. 초대가 곧 성장.</div>
+  </div>
+
+  <div class="frame">
+    <div class="phone" style="position:relative">
+      <div class="ptop"><span class="notch"></span></div>
+      <div style="padding:2px 12px 0;filter:blur(1px);opacity:.5"><div style="font-size:15px;font-weight:700">오늘 계획</div><div style="height:120px"></div></div>
+      <div class="dim"></div>
+      <div class="card" style="position:absolute;left:14px;right:14px;top:120px;padding:13px 14px;border-width:2.5px">
+        <b style="font-size:15px">TOP 3는 3개까지</b>
+        <div style="font-size:12px;color:var(--muted);margin:3px 0 10px">'장보기'를 올리려면 하나를 내려요</div>
+        <div class="li"><span style="width:15px;height:15px;border:2px solid var(--ink);border-radius:50%;flex:none"></span><span style="width:9px;height:9px;border-radius:2px;background:var(--c1)"></span>이력서 수정</div>
+        <div class="li"><span style="width:15px;height:15px;border:2px solid var(--ink);border-radius:50%;flex:none"></span><span style="width:9px;height:9px;border-radius:2px;background:var(--c4)"></span>면접 스터디</div>
+        <div class="li"><span style="width:15px;height:15px;border:2px solid var(--ink);border-radius:50%;background:var(--ink);flex:none"></span><span style="width:9px;height:9px;border-radius:2px;background:var(--c2)"></span>운동 <span style="font-size:11px;color:var(--c1);margin-left:auto">내림</span></div>
+        <div style="border-top:1.5px dashed var(--line);margin:8px 0"></div>
+        <div class="li" style="font-weight:700"><span style="width:9px;height:9px;border-radius:2px;background:var(--c3)"></span>장보기 <span style="font-size:11px;color:var(--muted)">올림</span></div>
+        <div style="display:flex;gap:8px;margin-top:12px"><div class="btn" style="flex:1;justify-content:center;background:#f1ede6">취소</div><div class="btn" style="flex:1;justify-content:center;background:var(--ink);color:#fff">교체</div></div>
+      </div>
+    </div>
+    <div class="flabel">④ TOP3 교체 모달 — 4번째를 올리면 막지 않고 <b>하나를 내리게</b> 강제(PRD 7.1 하드 제한 + 교체).</div>
+  </div>
+
+</div>
+</div>
+
+</div>
+<p class="dv-next">다음에 시도: "<a class="dv-oid" href="#1b">1b</a> 방향으로 가되 그리드는 <a class="dv-oid" href="#1a">1a</a>의 세로 타임라인" · "<a class="dv-oid" href="#1c">1c</a> 서클 화면을 더 자세히" · "<a class="dv-oid" href="#1a">1a</a>를 실제 색·폰트 입힌 하이파이로" · "배치 드래그 인터랙션이 궁금해"</p>
+</section>
+</x-dc>
+</body>
+</html>
