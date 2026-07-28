@@ -1,26 +1,91 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Broadsheet 디자인 토큰 (정본: docs/design_handoff_day3box_v0/README.md) */
+@theme {
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201e1d;
+  --color-accent: #0088b0;
+  --color-accent-2: #d6006c;
+  --color-divider: rgba(32, 30, 29, 0.16);
+
+  /* 카테고리 5색 프리셋 — 색은 고정, 이름만 편집 가능 (PRD 7.1) */
+  --color-cat1: #0088b0;
+  --color-cat2: #d6006c;
+  --color-cat3: #edbb00;
+  --color-cat4: #7d7979;
+  --color-cat5: #006786;
+
+  --font-serif: var(--font-source-serif), serif;
+
+  /* Broadsheet 간격 체계(5·10·15·20·30·40px)를 Tailwind 배수에 1:1 정렬 */
+  --spacing: 5px;
+
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-serif);
+    font-size: 15px;
+    line-height: 1.55;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* brain dump 항목 행 — hover 시 옅은 잉크 틴트 + 삭제 버튼 노출 */
+  .dump-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 4px;
+    border-radius: var(--radius-sm);
+  }
+  .dump-row:hover {
+    background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  }
+  .dump-row .dump-delete {
+    opacity: 0;
+    color: color-mix(in srgb, var(--color-text) 40%, transparent);
+  }
+  .dump-row:hover .dump-delete,
+  .dump-row .dump-delete:focus-visible {
+    opacity: 1;
+  }
+  .dump-row .dump-delete:hover {
+    color: var(--color-accent-2);
+  }
+
+  /* "＋ 할 일 추가…" 점선 입력 */
+  .dump-add-input {
+    padding: 8px 10px;
+    border: 1px dashed var(--color-divider);
+    border-radius: var(--radius-md);
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+    font-size: 14px;
+  }
+  .dump-add-input:hover,
+  .dump-add-input:focus-within {
+    border-color: var(--color-accent);
+  }
+  .dump-add-input input {
+    outline: none;
+    background: transparent;
+    color: var(--color-text);
+  }
+
+  /* 아웃라인 태그 ("TOP 3" 배지 등) */
+  .tag-outline {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-sm);
+  }
 }
