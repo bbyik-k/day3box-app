@@ -1,0 +1,192 @@
+'use client'
+
+import { useRef, useState } from 'react'
+import {
+  GRID_END_MIN,
+  GRID_START_MIN,
+  PX_PER_HOUR,
+  SNAP_MIN,
+  floorToSnap,
+  minToY,
+  roundToSnap,
+} from '@/lib/grid'
+import { BLOCK_STATUS_LABELS, isBlockStatus } from '@/types/block'
+import type { BlockView } from '@/components/time-grid'
+
+// 클릭(무이동 up)과 드래그를 구분하는 이동 임계값 — Task 007의 클릭 선택이 onClick만 얹으면 된다
+const DRAG_THRESHOLD_PX = 4
+
+type DragMode = 'move' | 'resize-top' | 'resize-bottom'
+
+type DragState = {
+  mode: DragMode
+  pointerId: number
+  startClientY: number
+  // pointerdown 시점 값 고정 — 드래그 중 props rebase가 와도 delta 기준이 흔들리지 않는다
+  originStart: number
+  originEnd: number
+  tempStart: number
+  tempEnd: number
+  moved: boolean
+}
+
+function formatMin(min: number): string {
+  const h = String(Math.floor(min / 60)).padStart(2, '0')
+  const m = String(min % 60).padStart(2, '0')
+  return `${h}:${m}`
+}
+
+function clamp(value: number, lower: number, upper: number): number {
+  return Math.min(Math.max(value, lower), upper)
+}
+
+export function GridBlock({
+  block,
+  onCommit,
+}: {
+  block: BlockView
+  onCommit: (id: string, startMin: number, endMin: number) => void
+}) {
+  const [drag, setDrag] = useState<DragState | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  function beginDrag(mode: DragMode, e: React.PointerEvent) {
+    if (e.button !== 0 || !e.isPrimary || drag !== null) {
+      return
+    }
+    rootRef.current?.setPointerCapture(e.pointerId)
+    setDrag({
+      mode,
+      pointerId: e.pointerId,
+      startClientY: e.clientY,
+      originStart: block.start_min,
+      originEnd: block.end_min,
+      tempStart: block.start_min,
+      tempEnd: block.end_min,
+      moved: false,
+    })
+  }
+
+  function handleMove(e: React.PointerEvent) {
+    if (drag === null || e.pointerId !== drag.pointerId) {
+      return
+    }
+    const dy = e.clientY - drag.startClientY
+    if (!drag.moved && Math.abs(dy) < DRAG_THRESHOLD_PX) {
+      return
+    }
+    const deltaMin = (dy / PX_PER_HOUR) * 60
+    const duration = drag.originEnd - drag.originStart
+    let tempStart = drag.tempStart
+    let tempEnd = drag.tempEnd
+
+    if (drag.mode === 'move') {
+      // clamp 상한도 스냅 정렬 — 비배수 duration에서 비정렬 start가 생기지 않게
+      const maxStart = floorToSnap(GRID_END_MIN - duration)
+      tempStart = clamp(
+        roundToSnap(drag.originStart + deltaMin),
+        GRID_START_MIN,
+        maxStart,
+      )
+      tempEnd = tempStart + duration
+    } else if (drag.mode === 'resize-bottom') {
+      tempEnd = clamp(
+        roundToSnap(drag.originEnd + deltaMin),
+        drag.originStart + SNAP_MIN,
+        GRID_END_MIN,
+      )
+    } else {
+      const maxStart = Math.max(
+        GRID_START_MIN,
+        floorToSnap(drag.originEnd - SNAP_MIN),
+      )
+      tempStart = clamp(
+        roundToSnap(drag.originStart + deltaMin),
+        GRID_START_MIN,
+        maxStart,
+      )
+    }
+
+    setDrag({ ...drag, tempStart, tempEnd, moved: true })
+  }
+
+  function handleUp(e: React.PointerEvent) {
+    if (drag === null || e.pointerId !== drag.pointerId) {
+      return
+    }
+    if (
+      drag.moved &&
+      (drag.tempStart !== drag.originStart || drag.tempEnd !== drag.originEnd)
+    ) {
+      onCommit(block.id, drag.tempStart, drag.tempEnd)
+    }
+    // 거부되면 커밋이 없으므로 props 위치로 렌더 = 원위치 복귀
+    setDrag(null)
+  }
+
+  function handleCancel() {
+    setDrag(null)
+  }
+
+  const dragging = drag !== null && drag.moved
+  const startMin = dragging ? drag.tempStart : block.start_min
+  const endMin = dragging ? drag.tempEnd : block.end_min
+  const duration = endMin - startMin
+  const heightPx = (duration / 60) * PX_PER_HOUR
+  const compact = duration < 45
+
+  return (
+    <div
+      ref={rootRef}
+      className="grid-block touch-none select-none cursor-grab"
+      data-cat={block.category ?? undefined}
+      data-testid="grid-block"
+      style={{
+        top: minToY(startMin),
+        height: heightPx,
+        zIndex: dragging ? 20 : undefined,
+        boxShadow: dragging ? '0 4px 12px rgba(32, 30, 29, 0.25)' : undefined,
+      }}
+      onPointerDown={(e) => beginDrag('move', e)}
+      onPointerMove={handleMove}
+      onPointerUp={handleUp}
+      onPointerCancel={handleCancel}
+    >
+      <div className={compact ? 'px-[10px] py-[3px]' : 'px-[10px] py-[7px]'}>
+        <div
+          className={`font-semibold truncate ${compact ? 'text-[13px]' : 'text-[14px]'}`}
+        >
+          {block.title}
+        </div>
+        {!compact && (
+          <div className="text-[11px] text-text/60 mt-[2px]">
+            {formatMin(startMin)}–{formatMin(endMin)} · {duration}분
+            {isBlockStatus(block.status)
+              ? ` · ${BLOCK_STATUS_LABELS[block.status]}`
+              : ''}
+          </div>
+        )}
+      </div>
+
+      {/* 리사이즈 핸들 — 15분 블록(10.5px)은 본문이 없어지므로 top 핸들 생략 */}
+      {heightPx >= 18 && (
+        <div
+          className="absolute inset-x-0 top-0 h-[6px] cursor-ns-resize"
+          data-testid="resize-top"
+          onPointerDown={(e) => {
+            e.stopPropagation()
+            beginDrag('resize-top', e)
+          }}
+        />
+      )}
+      <div
+        className="absolute inset-x-0 bottom-0 h-[6px] cursor-ns-resize"
+        data-testid="resize-bottom"
+        onPointerDown={(e) => {
+          e.stopPropagation()
+          beginDrag('resize-bottom', e)
+        }}
+      />
+    </div>
+  )
+}

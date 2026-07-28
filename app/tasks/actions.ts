@@ -222,6 +222,68 @@ export async function placeBlock(
   refresh()
 }
 
+// 이동·리사이즈 확정 — 클라이언트 스냅·겹침 검사의 서버측 백스톱.
+// end_min은 15배수를 요구하지 않는다: est_min이 임의 정수(예: 20분)라
+// 비정렬 end를 가진 정상 블록이 존재하고, 이동은 duration을 보존하기 때문.
+export async function moveBlock(
+  id: string,
+  startMin: number,
+  endMin: number,
+): Promise<{ error: string } | undefined> {
+  if (
+    !Number.isInteger(startMin) ||
+    !Number.isInteger(endMin) ||
+    startMin % SNAP_MIN !== 0 ||
+    startMin < GRID_START_MIN ||
+    endMin <= startMin ||
+    endMin > GRID_END_MIN
+  ) {
+    return { error: '유효하지 않은 시간입니다.' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: block, error: blockError } = await supabase
+    .from('blocks')
+    .select('id, date')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+  if (blockError || !block) {
+    return { error: '블록을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.' }
+  }
+
+  const { data: others, error: othersError } = await supabase
+    .from('blocks')
+    .select('start_min, end_min')
+    .eq('user_id', user.id)
+    .eq('date', block.date)
+    .neq('id', id)
+  if (othersError) {
+    return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
+  }
+  if ((others ?? []).some((b) => overlaps(startMin, endMin, b.start_min, b.end_min))) {
+    return { error: '해당 시간대에 이미 다른 블록이 있습니다.' }
+  }
+
+  const { error } = await supabase
+    .from('blocks')
+    .update({ start_min: startMin, end_min: endMin })
+    .eq('id', id)
+    .eq('user_id', user.id)
+  if (error) {
+    return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  refresh()
+}
+
 export async function setEstMin(
   id: string,
   estMin: number | null,

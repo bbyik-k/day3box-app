@@ -18,6 +18,14 @@ export function ceilToSnap(min: number): number {
   return Math.ceil(min / SNAP_MIN) * SNAP_MIN
 }
 
+export function floorToSnap(min: number): number {
+  return Math.floor(min / SNAP_MIN) * SNAP_MIN
+}
+
+export function roundToSnap(min: number): number {
+  return Math.round(min / SNAP_MIN) * SNAP_MIN
+}
+
 // [aStart, aEnd)와 [bStart, bEnd)의 겹침 판정 — 경계 접촉(end === start)은 겹침 아님
 export function overlaps(
   aStart: number,

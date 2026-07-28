@@ -1,16 +1,24 @@
 'use client'
 
-import { useEffect, useRef, useSyncExternalStore } from 'react'
+import {
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from 'react'
+import { moveBlock } from '@/app/tasks/actions'
 import { nowMinutesInSeoul } from '@/lib/date'
 import {
   GRID_END_MIN,
   GRID_HEIGHT_PX,
   GRID_HOURS,
   GRID_START_MIN,
-  PX_PER_HOUR,
   minToY,
+  overlaps,
 } from '@/lib/grid'
-import { BLOCK_STATUS_LABELS, isBlockStatus } from '@/types/block'
+import { GridBlock } from '@/components/grid-block'
 
 // 그리드 렌더용 블록 뷰 — 제목·카테고리는 task에서 조인 (정규화: blocks에는 없다)
 export type BlockView = {
@@ -38,6 +46,8 @@ function serverNowSnapshot(): number | null {
   return null
 }
 
+type MoveAction = { id: string; start_min: number; end_min: number }
+
 export function TimeGrid({ blocks }: { blocks: BlockView[] }) {
   // 서버 스냅샷은 null — 지금 라인은 클라이언트에서만 렌더돼 hydration 불일치가 없다
   const nowMin = useSyncExternalStore<number | null>(
@@ -47,6 +57,37 @@ export function TimeGrid({ blocks }: { blocks: BlockView[] }) {
   )
   const scrollRef = useRef<HTMLDivElement>(null)
   const didAutoScroll = useRef(false)
+
+  const [error, setError] = useState<string | null>(null)
+  const [, startTransition] = useTransition()
+  const [optimisticBlocks, applyOptimistic] = useOptimistic(
+    blocks,
+    (state: BlockView[], action: MoveAction): BlockView[] =>
+      state.map((b) =>
+        b.id === action.id
+          ? { ...b, start_min: action.start_min, end_min: action.end_min }
+          : b,
+      ),
+  )
+
+  function handleCommit(id: string, startMin: number, endMin: number) {
+    // 겹침 검사는 낙관 배열 기준(자기 자신 제외) — in-flight 이동을 반영한다
+    const conflict = optimisticBlocks.some(
+      (b) => b.id !== id && overlaps(startMin, endMin, b.start_min, b.end_min),
+    )
+    if (conflict) {
+      setError('해당 시간대에 이미 다른 블록이 있습니다.')
+      return
+    }
+    startTransition(async () => {
+      setError(null)
+      applyOptimistic({ id, start_min: startMin, end_min: endMin })
+      const result = await moveBlock(id, startMin, endMin)
+      if (result?.error) {
+        setError(result.error)
+      }
+    })
+  }
 
   // 진입 시 현재 시각으로 자동 스크롤 (PRD 7.1 #1 — 범위보다 스크롤 위치가 체감 UX를 좌우)
   useEffect(() => {
@@ -92,6 +133,12 @@ export function TimeGrid({ blocks }: { blocks: BlockView[] }) {
         </div>
       </div>
 
+      {error && (
+        <p role="alert" data-testid="grid-error" className="mb-2 text-[13px] text-accent-2">
+          {error}
+        </p>
+      )}
+
       <div
         ref={scrollRef}
         className="overflow-y-auto max-h-[calc(100vh-240px)]"
@@ -114,43 +161,13 @@ export function TimeGrid({ blocks }: { blocks: BlockView[] }) {
             )
           })}
 
-          {blocks.map((block) => {
-            const duration = block.end_min - block.start_min
-            const compact = duration < 45
-            return (
-              <div
-                key={block.id}
-                className="grid-block"
-                data-cat={block.category ?? undefined}
-                data-testid="grid-block"
-                style={{
-                  top: minToY(block.start_min),
-                  height: (duration / 60) * PX_PER_HOUR,
-                }}
-              >
-                <div className={compact ? 'px-[10px] py-[3px]' : 'px-[10px] py-[7px]'}>
-                  <div
-                    className={`font-semibold truncate ${compact ? 'text-[13px]' : 'text-[14px]'}`}
-                  >
-                    {block.title}
-                  </div>
-                  {!compact && (
-                    <div className="text-[11px] text-text/60 mt-[2px]">
-                      {formatMin(block.start_min)}–{formatMin(block.end_min)} ·{' '}
-                      {duration}분
-                      {isBlockStatus(block.status)
-                        ? ` · ${BLOCK_STATUS_LABELS[block.status]}`
-                        : ''}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+          {optimisticBlocks.map((block) => (
+            <GridBlock key={block.id} block={block} onCommit={handleCommit} />
+          ))}
 
           {showNowLine && (
             <div
-              className="absolute right-0 left-[44px] border-t-[1.5px] border-accent-2 z-10"
+              className="absolute right-0 left-[44px] border-t-[1.5px] border-accent-2 z-10 pointer-events-none"
               style={{ top: minToY(nowMin) }}
               data-testid="now-line"
             >
