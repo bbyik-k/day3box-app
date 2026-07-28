@@ -34,10 +34,8 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
-  const isPublicPath =
-    pathname === '/login' || pathname.startsWith('/auth')
 
-  if (!user && !isPublicPath) {
+  if (!user && pathname !== '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     // 리다이렉트 응답에도 갱신된 세션 쿠키를 복사해야 한다

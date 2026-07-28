@@ -32,9 +32,9 @@ pnpm exec tsc --noEmit    # 타입 검사
 
 ## 아키텍처
 
-**스택**: Next.js 16.2.11 (App Router) + React 19 + TypeScript strict + Tailwind v4 / Supabase (매직링크 Auth + Postgres + RLS) / Vercel / **pnpm**
+**스택**: Next.js 16.2.11 (App Router) + React 19 + TypeScript strict + Tailwind v4 / Supabase (이메일+비밀번호 Auth + Postgres + RLS) / Vercel / **pnpm**
 
-**v0 구조**: 사실상 단일 핵심 화면(하루 뷰: 좌 brain dump·TOP3 패널 + 우 타임 그리드) + 로그인/인증 콜백. 날짜 이동(어제/오늘/내일)은 별도 라우트가 아니라 날짜 컨텍스트로 처리.
+**v0 구조**: 사실상 단일 핵심 화면(하루 뷰: 좌 brain dump·TOP3 패널 + 우 타임 그리드) + 로그인 페이지. 날짜 이동(어제/오늘/내일)은 별도 라우트가 아니라 날짜 컨텍스트로 처리.
 
 **데이터 모델 (두 테이블만 — PRD 4장 확정)**:
 - `tasks`(무엇을·좌측) 1 : N `blocks`(언제·우측), `blocks.task_id → tasks on delete cascade`
@@ -50,7 +50,7 @@ pnpm exec tsc --noEmit    # 타입 검사
 - 드래그/리사이즈는 pointer 이벤트 **직접 구현** — dnd 라이브러리 금지
 - 상태관리는 React 내장(useState/useReducer)만 — 전역 상태 라이브러리 금지
 - **shadcn/ui 미사용** — Broadsheet 디자인 토큰(CSS 변수) + Source Serif 4 세리프(산세리프 금지) + Phosphor(duotone) 아이콘
-- 인증은 이메일 매직링크만 (소셜 로그인 v0 제외)
+- 인증은 이메일+비밀번호만 (매직링크는 내장 메일 발송 제한·SMTP 요구로 2026-07-28 철회, 소셜 로그인 v0 제외 — PRD 5장)
 - Supabase 클라이언트는 server/client 분리(`lib/supabase/`), 모듈 최상위 전역 선언 금지
 
 **오버엔지니어링 방어 (이 프로젝트의 최우선 규율)**:
