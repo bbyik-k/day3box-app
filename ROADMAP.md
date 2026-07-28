@@ -68,11 +68,11 @@ v3+ — 차트·반복 블록·알림 등 (논의 자체를 보류)
 ## v0 개발 단계
 
 **검증할 가설**: 타임박싱 절차(brain dump → TOP3 → 배치 → 기록) 자체가 매일 쓸 만한가?
-**현재 코드베이스**: create-next-app 초기 상태 (`app/page.tsx`·`layout.tsx`·`globals.css`). Supabase 미연동, 기능 코드 미착수.
+**현재 코드베이스**: Supabase 연동 완료 (`tasks`·`blocks` 스키마 + RLS, 매직링크 로그인/로그아웃, PKCE 콜백, `proxy.ts` 세션 갱신). 핵심 화면(brain dump/TOP3/그리드)은 미착수.
 
-### Phase 1: 기반 (Task 001)
+### Phase 1: 기반 (Task 001) ✅
 
-#### Task 001: 프로젝트 셋업 및 Supabase 연동 - 우선순위
+#### Task 001: 프로젝트 셋업 및 Supabase 연동 ✅ - 완료
 
 **목표**: Next.js 앱에 Supabase(Auth + Postgres + RLS)를 연결하고 매직링크 로그인이 실제 동작하는 상태를 만든다. (F8, F9 기반 / PRD 6장 Task 1)
 
@@ -86,16 +86,16 @@ v3+ — 차트·반복 블록·알림 등 (논의 자체를 보류)
 - `BlockStatus` TS union 타입 정의 (`'planned' | 'done' | 'partial' | 'moved'`) — `as`/`any` 금지
 
 **수락 기준**
-- [ ] 매직링크 이메일 수신 → 클릭 → 로그인 완료 → 앱 진입이 실제로 동작한다
-- [ ] `tasks`·`blocks` 테이블이 PRD 4장 스키마와 정확히 일치한다 (시간은 int 분, status는 text)
-- [ ] **RLS 검증: 타 유저(별도 테스트 계정)의 데이터가 조회·수정되지 않는다** — 실제 쿼리로 확인
-- [ ] 비로그인 상태에서 앱 데이터 접근이 차단된다
+- [x] 매직링크 이메일 수신 → 클릭 → 로그인 완료 → 앱 진입이 실제로 동작한다
+- [x] `tasks`·`blocks` 테이블이 PRD 4장 스키마와 정확히 일치한다 (시간은 int 분, status는 text)
+- [x] **RLS 검증: 타 유저(별도 테스트 계정)의 데이터가 조회·수정되지 않는다** — 실제 쿼리로 확인
+- [x] 비로그인 상태에서 앱 데이터 접근이 차단된다
 
 ---
 
 ### Phase 2: 좌측 — 계획 도구 (Task 002~003)
 
-#### Task 002: Brain dump 패널 구현
+#### Task 002: Brain dump 패널 구현 - 우선순위
 
 **목표**: 좌측 패널에서 할 일을 개수 제한 없이 추가·삭제하고, DB에 영속화한다. (F1)
 
