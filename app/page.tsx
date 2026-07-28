@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { todayInSeoul } from '@/lib/date'
 import { logout } from '@/app/auth/actions'
 import { PlanPanel } from '@/components/plan-panel'
+import { TimeGrid } from '@/components/time-grid'
 
 // 실제 인증 검증 지점 — proxy의 리다이렉트는 optimistic 체크일 뿐이다
 export default async function Home() {
@@ -49,8 +50,9 @@ export default async function Home() {
 
       <div className="grid grid-cols-[352px_1fr] gap-8 items-start pt-6">
         <PlanPanel tasks={tasks ?? []} />
-        {/* 우측 타임 그리드 자리 — Task 004에서 구현 */}
-        <section aria-hidden="true" className="min-h-[400px] border-l border-divider" />
+        <div className="border-l border-divider pl-6">
+          <TimeGrid />
+        </div>
       </div>
     </main>
   )
