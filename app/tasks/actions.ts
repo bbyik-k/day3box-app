@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { nowMinutesInSeoul, todayInSeoul } from '@/lib/date'
 import { isCategoryKey } from '@/lib/category'
+import { isBlockStatus } from '@/types/block'
 import {
   GRID_END_MIN,
   GRID_START_MIN,
@@ -275,6 +276,35 @@ export async function moveBlock(
   const { error } = await supabase
     .from('blocks')
     .update({ start_min: startMin, end_min: endMin })
+    .eq('id', id)
+    .eq('user_id', user.id)
+  if (error) {
+    return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  refresh()
+}
+
+// 상태 전환 — 값은 BlockStatus union으로만 봉인 (missed는 존재하지 않는다)
+export async function setBlockStatus(
+  id: string,
+  status: string,
+): Promise<{ error: string } | undefined> {
+  if (!isBlockStatus(status)) {
+    return { error: '지원하지 않는 상태입니다.' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { error } = await supabase
+    .from('blocks')
+    .update({ status })
     .eq('id', id)
     .eq('user_id', user.id)
   if (error) {

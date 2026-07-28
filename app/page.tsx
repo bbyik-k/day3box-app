@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { todayInSeoul } from '@/lib/date'
 import { logout } from '@/app/auth/actions'
-import { PlanPanel } from '@/components/plan-panel'
-import { TimeGrid } from '@/components/time-grid'
+import { DayView } from '@/components/day-view'
 
 // 실제 인증 검증 지점 — proxy의 리다이렉트는 optimistic 체크일 뿐이다
 export default async function Home() {
@@ -37,6 +36,7 @@ export default async function Home() {
     const task = taskById.get(b.task_id)
     return {
       id: b.id,
+      task_id: b.task_id,
       start_min: b.start_min,
       end_min: b.end_min,
       status: b.status,
@@ -69,12 +69,7 @@ export default async function Home() {
         </form>
       </header>
 
-      <div className="grid grid-cols-[352px_1fr] gap-8 items-start pt-6">
-        <PlanPanel tasks={tasks ?? []} />
-        <div className="border-l border-divider pl-6">
-          <TimeGrid blocks={blockViews} />
-        </div>
-      </div>
+      <DayView tasks={tasks ?? []} blocks={blockViews} />
     </main>
   )
 }

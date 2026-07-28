@@ -172,4 +172,74 @@
   .swap-modal::backdrop {
     background: color-mix(in srgb, var(--color-text) 40%, transparent);
   }
+
+  /* 상태 태그 — done cyan 틴트 / partial magenta 틴트 (정본: 핸드오프 상태 색 규칙) */
+  .tag-done,
+  .tag-partial {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .tag-done {
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    color: var(--color-accent);
+  }
+  .tag-partial {
+    background: color-mix(in srgb, var(--color-accent-2) 12%, transparent);
+    color: var(--color-accent-2);
+  }
+
+  /* moved 블록 — 점선 + 중립 회색, 실패 색(빨강) 절대 금지 */
+  .grid-block[data-status='moved'] {
+    background: transparent;
+    box-shadow: none;
+    border-left: 4px dashed var(--color-cat4);
+    border-top: 1px dashed var(--color-divider);
+    border-right: 1px dashed var(--color-divider);
+    border-bottom: 1px dashed var(--color-divider);
+  }
+
+  /* 상태 기록 편집 카드 */
+  .record-card {
+    padding: 12px;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--color-accent);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 상태 세그먼트 컨트롤 — 균등 분할, divider 테두리, 선택 칸만 잉크 반전 */
+  .seg {
+    display: flex;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .seg-opt {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    padding: 5px 0;
+    cursor: pointer;
+    color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  }
+  .seg-opt + .seg-opt {
+    border-left: 1px solid var(--color-divider);
+  }
+  .seg-opt input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .seg-opt:has(input:checked) {
+    background: var(--color-text);
+    color: var(--color-bg);
+    font-weight: 600;
+  }
+  .seg-opt:has(input:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
 }

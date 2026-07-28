@@ -42,10 +42,14 @@ function clamp(value: number, lower: number, upper: number): number {
 
 export function GridBlock({
   block,
+  selected,
   onCommit,
+  onSelect,
 }: {
   block: BlockView
+  selected: boolean
   onCommit: (id: string, startMin: number, endMin: number) => void
+  onSelect: (id: string) => void
 }) {
   const [drag, setDrag] = useState<DragState | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -119,6 +123,9 @@ export function GridBlock({
       (drag.tempStart !== drag.originStart || drag.tempEnd !== drag.originEnd)
     ) {
       onCommit(block.id, drag.tempStart, drag.tempEnd)
+    } else if (!drag.moved) {
+      // 임계값 미달의 무이동 up = 클릭 → 선택
+      onSelect(block.id)
     }
     // 거부되면 커밋이 없으므로 props 위치로 렌더 = 원위치 복귀
     setDrag(null)
@@ -135,17 +142,38 @@ export function GridBlock({
   const heightPx = (duration / 60) * PX_PER_HOUR
   const compact = duration < 45
 
+  const status = isBlockStatus(block.status) ? block.status : 'planned'
+  const moved = status === 'moved'
+  const statusTag =
+    status === 'done' ? (
+      <span className="tag-done">{BLOCK_STATUS_LABELS.done}</span>
+    ) : status === 'partial' ? (
+      <span className="tag-partial">{BLOCK_STATUS_LABELS.partial}</span>
+    ) : null
+
+  const dragShadow = '0 4px 12px rgba(32, 30, 29, 0.25)'
+  const selectRing = '0 0 0 2px var(--color-accent)'
+  const boxShadow = dragging
+    ? selected
+      ? `${selectRing}, ${dragShadow}`
+      : dragShadow
+    : selected
+      ? selectRing
+      : undefined
+
   return (
     <div
       ref={rootRef}
       className="grid-block touch-none select-none cursor-grab"
       data-cat={block.category ?? undefined}
+      data-status={status}
+      data-selected={selected || undefined}
       data-testid="grid-block"
       style={{
         top: minToY(startMin),
         height: heightPx,
-        zIndex: dragging ? 20 : undefined,
-        boxShadow: dragging ? '0 4px 12px rgba(32, 30, 29, 0.25)' : undefined,
+        zIndex: dragging ? 20 : selected ? 5 : undefined,
+        boxShadow,
       }}
       onPointerDown={(e) => beginDrag('move', e)}
       onPointerMove={handleMove}
@@ -153,17 +181,23 @@ export function GridBlock({
       onPointerCancel={handleCancel}
     >
       <div className={compact ? 'px-[10px] py-[3px]' : 'px-[10px] py-[7px]'}>
-        <div
-          className={`font-semibold truncate ${compact ? 'text-[13px]' : 'text-[14px]'}`}
-        >
-          {block.title}
+        <div className="flex items-center gap-1">
+          <div
+            className={`font-semibold truncate flex-1 ${compact ? 'text-[13px]' : 'text-[14px]'} ${moved ? 'text-text/50' : ''}`}
+          >
+            {block.title}
+          </div>
+          {statusTag}
         </div>
         {!compact && (
           <div className="text-[11px] text-text/60 mt-[2px]">
-            {formatMin(startMin)}–{formatMin(endMin)} · {duration}분
-            {isBlockStatus(block.status)
-              ? ` · ${BLOCK_STATUS_LABELS[block.status]}`
-              : ''}
+            {moved
+              ? '→ 내일로 이월'
+              : `${formatMin(startMin)}–${formatMin(endMin)} · ${duration}분${
+                  status === 'planned'
+                    ? ` · ${BLOCK_STATUS_LABELS.planned}`
+                    : ''
+                }`}
           </div>
         )}
       </div>

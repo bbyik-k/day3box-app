@@ -1,14 +1,6 @@
 'use client'
 
-import {
-  useEffect,
-  useOptimistic,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  useTransition,
-} from 'react'
-import { moveBlock } from '@/app/tasks/actions'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { nowMinutesInSeoul } from '@/lib/date'
 import {
   GRID_END_MIN,
@@ -16,13 +8,13 @@ import {
   GRID_HOURS,
   GRID_START_MIN,
   minToY,
-  overlaps,
 } from '@/lib/grid'
 import { GridBlock } from '@/components/grid-block'
 
 // 그리드 렌더용 블록 뷰 — 제목·카테고리는 task에서 조인 (정규화: blocks에는 없다)
 export type BlockView = {
   id: string
+  task_id: string
   start_min: number
   end_min: number
   status: string
@@ -46,9 +38,20 @@ function serverNowSnapshot(): number | null {
   return null
 }
 
-type MoveAction = { id: string; start_min: number; end_min: number }
-
-export function TimeGrid({ blocks }: { blocks: BlockView[] }) {
+// 프레젠테이션 컴포넌트 — 블록 낙관 상태·이동 확정·선택은 DayView가 소유한다
+export function TimeGrid({
+  blocks,
+  selectedId,
+  error,
+  onSelect,
+  onCommitMove,
+}: {
+  blocks: BlockView[]
+  selectedId: string | null
+  error: string | null
+  onSelect: (id: string) => void
+  onCommitMove: (id: string, startMin: number, endMin: number) => void
+}) {
   // 서버 스냅샷은 null — 지금 라인은 클라이언트에서만 렌더돼 hydration 불일치가 없다
   const nowMin = useSyncExternalStore<number | null>(
     subscribeMinuteTick,
@@ -57,37 +60,6 @@ export function TimeGrid({ blocks }: { blocks: BlockView[] }) {
   )
   const scrollRef = useRef<HTMLDivElement>(null)
   const didAutoScroll = useRef(false)
-
-  const [error, setError] = useState<string | null>(null)
-  const [, startTransition] = useTransition()
-  const [optimisticBlocks, applyOptimistic] = useOptimistic(
-    blocks,
-    (state: BlockView[], action: MoveAction): BlockView[] =>
-      state.map((b) =>
-        b.id === action.id
-          ? { ...b, start_min: action.start_min, end_min: action.end_min }
-          : b,
-      ),
-  )
-
-  function handleCommit(id: string, startMin: number, endMin: number) {
-    // 겹침 검사는 낙관 배열 기준(자기 자신 제외) — in-flight 이동을 반영한다
-    const conflict = optimisticBlocks.some(
-      (b) => b.id !== id && overlaps(startMin, endMin, b.start_min, b.end_min),
-    )
-    if (conflict) {
-      setError('해당 시간대에 이미 다른 블록이 있습니다.')
-      return
-    }
-    startTransition(async () => {
-      setError(null)
-      applyOptimistic({ id, start_min: startMin, end_min: endMin })
-      const result = await moveBlock(id, startMin, endMin)
-      if (result?.error) {
-        setError(result.error)
-      }
-    })
-  }
 
   // 진입 시 현재 시각으로 자동 스크롤 (PRD 7.1 #1 — 범위보다 스크롤 위치가 체감 UX를 좌우)
   useEffect(() => {
@@ -161,8 +133,14 @@ export function TimeGrid({ blocks }: { blocks: BlockView[] }) {
             )
           })}
 
-          {optimisticBlocks.map((block) => (
-            <GridBlock key={block.id} block={block} onCommit={handleCommit} />
+          {blocks.map((block) => (
+            <GridBlock
+              key={block.id}
+              block={block}
+              selected={block.id === selectedId}
+              onCommit={onCommitMove}
+              onSelect={onSelect}
+            />
           ))}
 
           {showNowLine && (
