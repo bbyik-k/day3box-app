@@ -88,4 +88,72 @@
     border: 1px solid var(--color-divider);
     border-radius: var(--radius-sm);
   }
+
+  /* TOP3 카드 — 색은 data-cat이 주입하는 --cat 변수 하나에서 파생(바·kicker·pill 공유) */
+  .top3-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--cat, var(--color-divider));
+  }
+  .top3-card[data-cat='cat1'] { --cat: var(--color-cat1); }
+  .top3-card[data-cat='cat2'] { --cat: var(--color-cat2); }
+  .top3-card[data-cat='cat3'] { --cat: var(--color-cat3); }
+  .top3-card[data-cat='cat4'] { --cat: var(--color-cat4); }
+  .top3-card[data-cat='cat5'] { --cat: var(--color-cat5); }
+  /* 노랑(cat3)은 밝은 배경 위 텍스트 가독성이 나빠 잉크만 중립으로 (목업의 neutral 대체 재현) */
+  .top3-card[data-cat='cat3'] { --cat-ink: color-mix(in srgb, var(--color-text) 70%, transparent); }
+
+  .top3-kicker {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cat-ink, var(--cat, color-mix(in srgb, var(--color-text) 55%, transparent)));
+  }
+
+  /* 카드 hover 시에만 노출되는 보조 도구 (내리기·카테고리 스와치) */
+  .top3-tool {
+    opacity: 0;
+  }
+  .top3-card:hover .top3-tool,
+  .top3-tool:focus-visible,
+  .top3-card:focus-within .top3-tool {
+    opacity: 1;
+  }
+
+  /* 소요시간 틴트 pill — 내부는 상시 입력 가능한 투명 input */
+  .tag-tint {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--cat, var(--color-text)) 12%, transparent);
+    color: var(--cat-ink, var(--cat, inherit));
+  }
+  .tag-tint input {
+    width: 4ch;
+    background: transparent;
+    border: none;
+    outline: none;
+    text-align: right;
+    color: inherit;
+    font: inherit;
+    appearance: textfield;
+  }
+  .tag-tint input::-webkit-outer-spin-button,
+  .tag-tint input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .swap-modal::backdrop {
+    background: color-mix(in srgb, var(--color-text) 40%, transparent);
+  }
 }

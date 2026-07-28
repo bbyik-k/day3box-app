@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { todayInSeoul } from '@/lib/date'
 import { logout } from '@/app/auth/actions'
-import { BrainDump } from '@/components/brain-dump'
+import { PlanPanel } from '@/components/plan-panel'
 
 // 실제 인증 검증 지점 — proxy의 리다이렉트는 optimistic 체크일 뿐이다
 export default async function Home() {
@@ -18,7 +18,7 @@ export default async function Home() {
   const today = todayInSeoul()
   const { data: tasks } = await supabase
     .from('tasks')
-    .select('id, title, is_top3')
+    .select('id, title, is_top3, est_min, category')
     .eq('user_id', user.id)
     .eq('date', today)
     .order('created_at', { ascending: true })
@@ -48,7 +48,7 @@ export default async function Home() {
       </header>
 
       <div className="grid grid-cols-[352px_1fr] gap-8 items-start pt-6">
-        <BrainDump tasks={tasks ?? []} />
+        <PlanPanel tasks={tasks ?? []} />
         {/* 우측 타임 그리드 자리 — Task 004에서 구현 */}
         <section aria-hidden="true" className="min-h-[400px] border-l border-divider" />
       </div>

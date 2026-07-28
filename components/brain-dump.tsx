@@ -1,28 +1,23 @@
 'use client'
 
-import { useOptimistic, useRef, useState, useTransition } from 'react'
-import { addTask, deleteTask } from '@/app/tasks/actions'
-import type { Tables } from '@/types/supabase'
+import { useRef } from 'react'
+import type { PlanTask } from '@/components/plan-panel'
 
-export type DumpTask = Pick<Tables<'tasks'>, 'id' | 'title' | 'is_top3'>
-
-type OptimisticAction =
-  | { type: 'add'; tempId: string; title: string }
-  | { type: 'delete'; id: string }
-
-// tasks prop은 초기값이 아니라 항상 최신 canonical state — refresh() 후 useOptimistic이 자동 rebase된다
-export function BrainDump({ tasks }: { tasks: DumpTask[] }) {
-  const [error, setError] = useState<string | null>(null)
-  const [, startTransition] = useTransition()
+// 프레젠테이션 컴포넌트 — 낙관적 상태·액션 호출은 PlanPanel이 소유한다
+export function BrainDump({
+  tasks,
+  error,
+  onAdd,
+  onDelete,
+  onToggleTop3,
+}: {
+  tasks: PlanTask[]
+  error: string | null
+  onAdd: (title: string) => Promise<void>
+  onDelete: (id: string) => void
+  onToggleTop3: (task: PlanTask) => void
+}) {
   const inputRef = useRef<HTMLInputElement>(null)
-
-  const [optimisticTasks, applyOptimistic] = useOptimistic(
-    tasks,
-    (state: DumpTask[], action: OptimisticAction): DumpTask[] =>
-      action.type === 'add'
-        ? [...state, { id: action.tempId, title: action.title, is_top3: false }]
-        : state.filter((t) => t.id !== action.id),
-  )
 
   async function handleAdd(formData: FormData) {
     const value = formData.get('title')
@@ -30,24 +25,8 @@ export function BrainDump({ tasks }: { tasks: DumpTask[] }) {
     if (title === '') {
       return
     }
-    setError(null)
-    applyOptimistic({ type: 'add', tempId: `temp-${crypto.randomUUID()}`, title })
-    const result = await addTask(title)
-    if (result?.error) {
-      setError(result.error)
-    }
+    await onAdd(title)
     inputRef.current?.focus()
-  }
-
-  function handleDelete(id: string) {
-    startTransition(async () => {
-      setError(null)
-      applyOptimistic({ type: 'delete', id })
-      const result = await deleteTask(id)
-      if (result?.error) {
-        setError(result.error)
-      }
-    })
   }
 
   return (
@@ -60,13 +39,21 @@ export function BrainDump({ tasks }: { tasks: DumpTask[] }) {
       </p>
 
       <ul className="mt-3">
-        {optimisticTasks.map((task) => {
+        {tasks.map((task) => {
           const isPending = task.id.startsWith('temp-')
           return (
             <li key={task.id} className="dump-row">
-              <span
-                aria-hidden="true"
-                className="size-[15px] shrink-0 rounded-sm border-[1.5px] border-divider"
+              <button
+                type="button"
+                aria-pressed={task.is_top3}
+                aria-label={`${task.title} TOP 3 ${task.is_top3 ? '내리기' : '올리기'}`}
+                disabled={isPending}
+                onClick={() => onToggleTop3(task)}
+                className={`size-[15px] shrink-0 rounded-sm border-[1.5px] disabled:opacity-30 ${
+                  task.is_top3
+                    ? 'border-accent bg-accent'
+                    : 'border-divider hover:border-accent'
+                }`}
               />
               <span className="flex-1">{task.title}</span>
               {task.is_top3 && <span className="tag-outline">TOP 3</span>}
@@ -74,7 +61,7 @@ export function BrainDump({ tasks }: { tasks: DumpTask[] }) {
                 type="button"
                 aria-label={`${task.title} 삭제`}
                 disabled={isPending}
-                onClick={() => handleDelete(task.id)}
+                onClick={() => onDelete(task.id)}
                 className="dump-delete text-[15px] leading-none px-1 disabled:opacity-30"
               >
                 ×
