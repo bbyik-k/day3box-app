@@ -3,8 +3,15 @@
 import { refresh } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { todayInSeoul } from '@/lib/date'
+import { nowMinutesInSeoul, todayInSeoul } from '@/lib/date'
 import { isCategoryKey } from '@/lib/category'
+import {
+  GRID_END_MIN,
+  GRID_START_MIN,
+  SNAP_MIN,
+  ceilToSnap,
+  overlaps,
+} from '@/lib/grid'
 
 const TOP3_LIMIT = 3
 
@@ -145,6 +152,71 @@ export async function swapTop3(
     .select('id')
   if (promoteError || !promoted || promoted.length === 0) {
     return { error: '교체에 실패했습니다. 새로고침 후 다시 시도해 주세요.' }
+  }
+
+  refresh()
+}
+
+// 배치: 현재 시각 이후 15분 정렬 슬롯 중 기존 블록과 겹치지 않는 첫 자리에 블록 생성.
+// 슬롯 탐색과 겹침 검사는 여기(서버)가 단일 진실 지점이다 (한 시간대 = 최대 한 블록).
+export async function placeBlock(
+  taskId: string,
+): Promise<{ error: string } | undefined> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: task, error: taskError } = await supabase
+    .from('tasks')
+    .select('id, date, est_min')
+    .eq('id', taskId)
+    .eq('user_id', user.id)
+    .single()
+  if (taskError || !task) {
+    return { error: '배치할 항목을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.' }
+  }
+  if (task.est_min === null) {
+    return { error: '소요시간을 먼저 입력해 주세요.' }
+  }
+
+  const { data: blocks, error: blocksError } = await supabase
+    .from('blocks')
+    .select('start_min, end_min')
+    .eq('user_id', user.id)
+    .eq('date', task.date)
+  if (blocksError) {
+    return { error: '배치에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  const existing = blocks ?? []
+  let start = Math.max(ceilToSnap(nowMinutesInSeoul()), GRID_START_MIN)
+  let found: { start: number; end: number } | null = null
+  while (start + task.est_min <= GRID_END_MIN) {
+    const end = start + task.est_min
+    const candidateStart = start
+    if (!existing.some((b) => overlaps(candidateStart, end, b.start_min, b.end_min))) {
+      found = { start, end }
+      break
+    }
+    start += SNAP_MIN
+  }
+  if (found === null) {
+    return { error: '오늘 그리드에 빈 자리가 없습니다.' }
+  }
+
+  const { error } = await supabase.from('blocks').insert({
+    user_id: user.id,
+    task_id: task.id,
+    date: task.date,
+    start_min: found.start,
+    end_min: found.end,
+  })
+  if (error) {
+    return { error: '배치에 실패했습니다. 다시 시도해 주세요.' }
   }
 
   refresh()

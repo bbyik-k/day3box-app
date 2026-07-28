@@ -10,3 +10,20 @@ export const GRID_HEIGHT_PX = GRID_HOURS * PX_PER_HOUR
 export function minToY(min: number): number {
   return ((min - GRID_START_MIN) / 60) * PX_PER_HOUR
 }
+
+// 배치·스냅은 항상 15분 단위 (PRD 7.1 #2)
+export const SNAP_MIN = 15
+
+export function ceilToSnap(min: number): number {
+  return Math.ceil(min / SNAP_MIN) * SNAP_MIN
+}
+
+// [aStart, aEnd)와 [bStart, bEnd)의 겹침 판정 — 경계 접촉(end === start)은 겹침 아님
+export function overlaps(
+  aStart: number,
+  aEnd: number,
+  bStart: number,
+  bEnd: number,
+): boolean {
+  return aStart < bEnd && bStart < aEnd
+}

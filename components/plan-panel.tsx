@@ -8,6 +8,7 @@ import {
   swapTop3,
   setEstMin,
   setCategory,
+  placeBlock,
 } from '@/app/tasks/actions'
 import type { CategoryKey } from '@/lib/category'
 import { categoryLabel } from '@/lib/category'
@@ -148,6 +149,21 @@ export function PlanPanel({ tasks }: { tasks: PlanTask[] }) {
     run({ type: 'category', id, value }, () => setCategory(id, value))
   }
 
+  // 배치는 슬롯 계산이 서버 단일 지점이라 낙관적 반영 없이 refresh() 결과를 기다린다
+  function handlePlace(task: PlanTask) {
+    if (task.est_min === null) {
+      setError('소요시간을 먼저 입력해 주세요.')
+      return
+    }
+    startTransition(async () => {
+      setError(null)
+      const result = await placeBlock(task.id)
+      if (result?.error) {
+        setError(result.error)
+      }
+    })
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <BrainDump
@@ -162,6 +178,7 @@ export function PlanPanel({ tasks }: { tasks: PlanTask[] }) {
         onDemote={handleToggleTop3}
         onEstMin={handleEstMin}
         onCategory={handleCategory}
+        onPlace={handlePlace}
       />
 
       {swapTarget && (

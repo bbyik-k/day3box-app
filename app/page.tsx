@@ -24,6 +24,27 @@ export default async function Home() {
     .eq('date', today)
     .order('created_at', { ascending: true })
 
+  // block 조회는 비정규화된 blocks.date로 조인 없이 — 제목·카테고리는 task에서 읽는다
+  const { data: blocks } = await supabase
+    .from('blocks')
+    .select('id, task_id, start_min, end_min, status')
+    .eq('user_id', user.id)
+    .eq('date', today)
+    .order('start_min', { ascending: true })
+
+  const taskById = new Map((tasks ?? []).map((t) => [t.id, t]))
+  const blockViews = (blocks ?? []).map((b) => {
+    const task = taskById.get(b.task_id)
+    return {
+      id: b.id,
+      start_min: b.start_min,
+      end_min: b.end_min,
+      status: b.status,
+      title: task?.title ?? '(삭제된 항목)',
+      category: task?.category ?? null,
+    }
+  })
+
   const displayDate = new Intl.DateTimeFormat('ko-KR', {
     timeZone: 'Asia/Seoul',
     month: 'long',
@@ -51,7 +72,7 @@ export default async function Home() {
       <div className="grid grid-cols-[352px_1fr] gap-8 items-start pt-6">
         <PlanPanel tasks={tasks ?? []} />
         <div className="border-l border-divider pl-6">
-          <TimeGrid />
+          <TimeGrid blocks={blockViews} />
         </div>
       </div>
     </main>

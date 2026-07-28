@@ -19,11 +19,13 @@ export function Top3Panel({
   onDemote,
   onEstMin,
   onCategory,
+  onPlace,
 }: {
   topTasks: PlanTask[]
   onDemote: (task: PlanTask) => void
   onEstMin: (id: string, value: number | null) => void
   onCategory: (id: string, value: CategoryKey) => void
+  onPlace: (task: PlanTask) => void
 }) {
   function handleEstMinCommit(task: PlanTask, raw: string) {
     if (raw.trim() === '') {
@@ -61,7 +63,13 @@ export function Top3Panel({
               className="top3-card"
               data-cat={task.category ?? undefined}
             >
-              <div className="flex-1 min-w-0">
+              {/* 카드 본문 클릭 = 다음 빈 슬롯 자동 배치 (PRD 7.1 #4) */}
+              <button
+                type="button"
+                onClick={() => onPlace(task)}
+                title="클릭하면 다음 빈 슬롯에 배치"
+                className="flex-1 min-w-0 text-left cursor-pointer"
+              >
                 <div className="top3-kicker">
                   {String(index + 1).padStart(2, '0')}
                   {label !== null ? ` · ${label}` : ''}
@@ -69,7 +77,7 @@ export function Top3Panel({
                 <div className="text-[16px] font-semibold truncate">
                   {task.title}
                 </div>
-              </div>
+              </button>
 
               <div className="flex items-center gap-1">
                 {CATEGORY_KEYS.map((key) => (

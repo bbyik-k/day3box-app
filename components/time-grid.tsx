@@ -7,8 +7,20 @@ import {
   GRID_HEIGHT_PX,
   GRID_HOURS,
   GRID_START_MIN,
+  PX_PER_HOUR,
   minToY,
 } from '@/lib/grid'
+import { BLOCK_STATUS_LABELS, isBlockStatus } from '@/types/block'
+
+// 그리드 렌더용 블록 뷰 — 제목·카테고리는 task에서 조인 (정규화: blocks에는 없다)
+export type BlockView = {
+  id: string
+  start_min: number
+  end_min: number
+  status: string
+  title: string
+  category: string | null
+}
 
 function formatMin(min: number): string {
   const h = String(Math.floor(min / 60)).padStart(2, '0')
@@ -26,7 +38,7 @@ function serverNowSnapshot(): number | null {
   return null
 }
 
-export function TimeGrid() {
+export function TimeGrid({ blocks }: { blocks: BlockView[] }) {
   // 서버 스냅샷은 null — 지금 라인은 클라이언트에서만 렌더돼 hydration 불일치가 없다
   const nowMin = useSyncExternalStore<number | null>(
     subscribeMinuteTick,
@@ -98,6 +110,40 @@ export function TimeGrid() {
                 <span className="absolute left-0 -top-2 text-[11px] tracking-[0.06em] bg-bg pr-2 text-text/55">
                   {formatMin(min)}
                 </span>
+              </div>
+            )
+          })}
+
+          {blocks.map((block) => {
+            const duration = block.end_min - block.start_min
+            const compact = duration < 45
+            return (
+              <div
+                key={block.id}
+                className="grid-block"
+                data-cat={block.category ?? undefined}
+                data-testid="grid-block"
+                style={{
+                  top: minToY(block.start_min),
+                  height: (duration / 60) * PX_PER_HOUR,
+                }}
+              >
+                <div className={compact ? 'px-[10px] py-[3px]' : 'px-[10px] py-[7px]'}>
+                  <div
+                    className={`font-semibold truncate ${compact ? 'text-[13px]' : 'text-[14px]'}`}
+                  >
+                    {block.title}
+                  </div>
+                  {!compact && (
+                    <div className="text-[11px] text-text/60 mt-[2px]">
+                      {formatMin(block.start_min)}–{formatMin(block.end_min)} ·{' '}
+                      {duration}분
+                      {isBlockStatus(block.status)
+                        ? ` · ${BLOCK_STATUS_LABELS[block.status]}`
+                        : ''}
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}
