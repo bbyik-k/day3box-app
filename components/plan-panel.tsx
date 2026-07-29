@@ -129,6 +129,17 @@ export function PlanPanel({
     })
   }
 
+  // 이월 즉시 삭제 — 가져온 뒤 지우는 2단계 우회 제거. carryTasks는 서버 prop이라 낙관 범위 밖
+  function handleCarryDelete(task: PlanTask) {
+    startTransition(async () => {
+      setError(null)
+      const result = await deleteTask(task.id)
+      if (result?.error) {
+        setError(result.error)
+      }
+    })
+  }
+
   function handleDelete(id: string) {
     run({ type: 'delete', id }, () => deleteTask(id))
   }
@@ -211,6 +222,15 @@ export function PlanPanel({
                   className="shrink-0 text-[12px] text-accent hover:text-accent-2"
                 >
                   가져오기 →
+                </button>
+                <button
+                  type="button"
+                  aria-label={`${task.title} 삭제`}
+                  data-testid="carry-delete"
+                  onClick={() => handleCarryDelete(task)}
+                  className="dump-delete shrink-0 px-1 text-[14px] leading-none"
+                >
+                  ×
                 </button>
               </li>
             ))}
