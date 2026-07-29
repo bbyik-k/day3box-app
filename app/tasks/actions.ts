@@ -252,6 +252,31 @@ export async function placeBlock(
   refresh()
 }
 
+// 배치 취소 — 블록만 삭제, task는 brain dump에 유지 (F4의 역연산).
+// 삭제로 block 0개가 된 task는 carryTaskToDate의 검증을 통과해 익일 이월 대상이 된다.
+export async function deleteBlock(
+  id: string,
+): Promise<{ error: string } | undefined> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { error } = await supabase
+    .from('blocks')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+  if (error) {
+    return { error: '배치 취소에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  refresh()
+}
+
 // 이동·리사이즈 확정 — 클라이언트 스냅·겹침 검사의 서버측 백스톱.
 // end_min은 15배수를 요구하지 않는다: est_min이 임의 정수(예: 20분)라
 // 비정렬 end를 가진 정상 블록이 존재하고, 이동은 duration을 보존하기 때문.

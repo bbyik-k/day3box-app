@@ -2,7 +2,7 @@
 
 import { useOptimistic, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { moveBlock, setBlockStatus } from '@/app/tasks/actions'
+import { deleteBlock, moveBlock, setBlockStatus } from '@/app/tasks/actions'
 import { shiftDate } from '@/lib/date'
 import { overlaps } from '@/lib/grid'
 import type { BlockStatus } from '@/types/block'
@@ -74,6 +74,18 @@ export function DayView({
       setError(null)
       applyOptimistic({ type: 'move', id, start_min: startMin, end_min: endMin })
       const result = await moveBlock(id, startMin, endMin)
+      if (result?.error) {
+        setError(result.error)
+      }
+    })
+  }
+
+  // 배치 취소 — 드문 조작이라 낙관 반영 없이 refresh 결과 대기 (placeBlock 패턴).
+  // 삭제 후 selectedBlock lookup이 null이 되어 편집 카드는 자동으로 플레이스홀더 복귀
+  function handleDeleteBlock(id: string) {
+    startTransition(async () => {
+      setError(null)
+      const result = await deleteBlock(id)
       if (result?.error) {
         setError(result.error)
       }
@@ -154,6 +166,7 @@ export function DayView({
               blocks={optimisticBlocks}
               selectedBlock={selectedBlock}
               onStatus={handleStatus}
+              onDelete={handleDeleteBlock}
             />
           )}
         </div>

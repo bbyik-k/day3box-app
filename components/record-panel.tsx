@@ -18,11 +18,13 @@ export function RecordPanel({
   blocks,
   selectedBlock,
   onStatus,
+  onDelete,
 }: {
   tasks: PlanTask[]
   blocks: BlockView[]
   selectedBlock: BlockView | null
   onStatus: (id: string, status: BlockStatus) => void
+  onDelete: (id: string) => void
 }) {
   const doneCount = blocks.filter((b) => b.status === 'done').length
   const partialCount = blocks.filter((b) => b.status === 'partial').length
@@ -130,9 +132,20 @@ export function RecordPanel({
                 </label>
               ))}
             </div>
-            <p className="mt-2 text-[12px] text-text/50">
-              블록을 눌러 완료 / 부분 / 이월을 기록한다.
-            </p>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-[12px] text-text/50">
+                블록을 눌러 완료 / 부분 / 이월을 기록한다.
+              </p>
+              {/* 중립 조작 — 실패 색 아님. task는 목록에 남고 재배치는 원클릭이라 confirm 없음 */}
+              <button
+                type="button"
+                data-testid="block-delete"
+                onClick={() => onDelete(selectedBlock.id)}
+                className="shrink-0 text-[12px] text-text/50 hover:text-accent-2"
+              >
+                배치 취소 ×
+              </button>
+            </div>
           </div>
         )}
       </div>
