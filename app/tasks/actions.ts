@@ -4,7 +4,7 @@ import { refresh } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isValidDateStr, nowMinutesInSeoul, todayInSeoul } from '@/lib/date'
-import { isCategoryKey } from '@/lib/category'
+import { CATEGORY_KEYS, isCategoryKey } from '@/lib/category'
 import { isBlockStatus } from '@/types/block'
 import {
   GRID_END_MIN,
@@ -15,6 +15,14 @@ import {
 } from '@/lib/grid'
 
 const TOP3_LIMIT = 3
+// 일반(비 TOP3) task의 기본 배치 시간 — 세밀 조정은 그리드 리사이즈로 (2026-07-29 결정)
+const DEFAULT_PLACE_MIN = 30
+
+// TOP3는 무조건 유색 — 승격 시 카테고리가 없으면 그 날짜 TOP3가 안 쓰는 첫 프리셋 색을 지정.
+// 클라이언트 낙관 반영도 같은 결정적 규칙을 쓰므로 refresh 후 결과가 일치한다
+function firstUnusedCategory(used: (string | null)[]): string {
+  return CATEGORY_KEYS.find((key) => !used.includes(key)) ?? CATEGORY_KEYS[0]
+}
 
 export async function addTask(
   title: string,
@@ -86,30 +94,37 @@ export async function toggleTop3(
 
   // 하드 제한 백스톱 — 정상 경로는 클라이언트가 교체 모달로 선점하지만 서버에서도 봉인.
   // 카운트 기준 날짜는 대상 task.date에서 유도한다 (클라이언트 전달값은 신뢰하지 않는다)
+  const update: { is_top3: boolean; category?: string } = { is_top3: next }
   if (next) {
     const { data: task, error: taskError } = await supabase
       .from('tasks')
-      .select('id, date')
+      .select('id, date, category')
       .eq('id', id)
       .eq('user_id', user.id)
       .single()
     if (taskError || !task) {
       return { error: '항목을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.' }
     }
-    const { count } = await supabase
+    const { data: currentTop3 } = await supabase
       .from('tasks')
-      .select('id', { count: 'exact', head: true })
+      .select('category')
       .eq('user_id', user.id)
       .eq('date', task.date)
       .eq('is_top3', true)
-    if ((count ?? 0) >= TOP3_LIMIT) {
+    if ((currentTop3 ?? []).length >= TOP3_LIMIT) {
       return { error: 'TOP 3가 가득 찼습니다. 하나를 내려 주세요.' }
+    }
+    // TOP3 무조건 유색 — 카테고리 미지정이면 미사용 프리셋 색 자동 지정
+    if (task.category === null) {
+      update.category = firstUnusedCategory(
+        (currentTop3 ?? []).map((t) => t.category),
+      )
     }
   }
 
   const { error } = await supabase
     .from('tasks')
-    .update({ is_top3: next })
+    .update(update)
     .eq('id', id)
     .eq('user_id', user.id)
   if (error) {
@@ -141,7 +156,7 @@ export async function swapTop3(
   // 재카운트 기준 날짜는 승격 대상 task.date에서 유도 (toggleTop3과 동일 원칙)
   const { data: promoteTask, error: promoteTaskError } = await supabase
     .from('tasks')
-    .select('id, date')
+    .select('id, date, category')
     .eq('id', promoteId)
     .eq('user_id', user.id)
     .single()
@@ -160,19 +175,29 @@ export async function swapTop3(
     return { error: '교체에 실패했습니다. 새로고침 후 다시 시도해 주세요.' }
   }
 
-  const { count } = await supabase
+  const { data: remainingTop3 } = await supabase
     .from('tasks')
-    .select('id', { count: 'exact', head: true })
+    .select('category')
     .eq('user_id', user.id)
     .eq('date', promoteTask.date)
     .eq('is_top3', true)
-  if ((count ?? 0) >= TOP3_LIMIT) {
+  if ((remainingTop3 ?? []).length >= TOP3_LIMIT) {
     return { error: 'TOP 3가 가득 찼습니다. 하나를 내려 주세요.' }
+  }
+
+  // TOP3 무조건 유색 — toggleTop3과 동일한 자동 지정 규칙
+  const promoteUpdate: { is_top3: boolean; category?: string } = {
+    is_top3: true,
+  }
+  if (promoteTask.category === null) {
+    promoteUpdate.category = firstUnusedCategory(
+      (remainingTop3 ?? []).map((t) => t.category),
+    )
   }
 
   const { data: promoted, error: promoteError } = await supabase
     .from('tasks')
-    .update({ is_top3: true })
+    .update(promoteUpdate)
     .eq('id', promoteId)
     .eq('user_id', user.id)
     .select('id')
@@ -198,16 +223,18 @@ export async function placeBlock(
 
   const { data: task, error: taskError } = await supabase
     .from('tasks')
-    .select('id, date, est_min')
+    .select('id, date, est_min, is_top3')
     .eq('id', taskId)
     .eq('user_id', user.id)
     .single()
   if (taskError || !task) {
     return { error: '배치할 항목을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.' }
   }
-  if (task.est_min === null) {
+  // TOP3는 소요시간 입력이 완료 정의(PRD 엣지 케이스) — 일반 task는 기본 30분으로 즉시 배치
+  if (task.est_min === null && task.is_top3) {
     return { error: '소요시간을 먼저 입력해 주세요.' }
   }
+  const estMin = task.est_min ?? DEFAULT_PLACE_MIN
 
   const { data: blocks, error: blocksError } = await supabase
     .from('blocks')
@@ -225,8 +252,8 @@ export async function placeBlock(
       ? Math.max(ceilToSnap(nowMinutesInSeoul()), GRID_START_MIN)
       : GRID_START_MIN
   let found: { start: number; end: number } | null = null
-  while (start + task.est_min <= GRID_END_MIN) {
-    const end = start + task.est_min
+  while (start + estMin <= GRID_END_MIN) {
+    const end = start + estMin
     const candidateStart = start
     if (!existing.some((b) => overlaps(candidateStart, end, b.start_min, b.end_min))) {
       found = { start, end }
@@ -247,6 +274,15 @@ export async function placeBlock(
   })
   if (error) {
     return { error: '배치에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  // 기본값으로 배치했으면 est_min도 30으로 — 소요시간과 블록 높이는 단일 개념(양방향 동기화)
+  if (task.est_min === null) {
+    await supabase
+      .from('tasks')
+      .update({ est_min: estMin })
+      .eq('id', task.id)
+      .eq('user_id', user.id)
   }
 
   refresh()
@@ -306,7 +342,7 @@ export async function moveBlock(
 
   const { data: block, error: blockError } = await supabase
     .from('blocks')
-    .select('id, date')
+    .select('id, date, task_id')
     .eq('id', id)
     .eq('user_id', user.id)
     .single()
@@ -335,6 +371,14 @@ export async function moveBlock(
   if (error) {
     return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
   }
+
+  // 양방향 동기화: 블록 높이가 곧 소요시간 — 리사이즈 확정 시 카드의 분도 따라간다
+  // (이동은 duration 보존이라 사실상 no-op, 불변식 유지 목적으로 항상 갱신)
+  await supabase
+    .from('tasks')
+    .update({ est_min: endMin - startMin })
+    .eq('id', block.task_id)
+    .eq('user_id', user.id)
 
   refresh()
 }
@@ -368,6 +412,8 @@ export async function setBlockStatus(
   refresh()
 }
 
+// 양방향 동기화: 분 수정 시 배치된 블록의 높이(end_min)도 재계산.
+// 겹침·그리드 범위 초과가 하나라도 있으면 전체 거부 — task와 블록이 어긋난 채 저장되지 않는다
 export async function setEstMin(
   id: string,
   estMin: number | null,
@@ -385,6 +431,58 @@ export async function setEstMin(
   } = await supabase.auth.getUser()
   if (!user) {
     redirect('/login')
+  }
+
+  if (estMin !== null) {
+    const { data: taskBlocks, error: taskBlocksError } = await supabase
+      .from('blocks')
+      .select('id, date, start_min')
+      .eq('task_id', id)
+      .eq('user_id', user.id)
+    if (taskBlocksError) {
+      return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
+    }
+
+    if ((taskBlocks ?? []).length > 0) {
+      const dates = [...new Set((taskBlocks ?? []).map((b) => b.date))]
+      const { data: dayBlocks, error: dayBlocksError } = await supabase
+        .from('blocks')
+        .select('id, date, start_min, end_min')
+        .eq('user_id', user.id)
+        .in('date', dates)
+      if (dayBlocksError) {
+        return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
+      }
+
+      for (const b of taskBlocks ?? []) {
+        const newEnd = b.start_min + estMin
+        if (newEnd > GRID_END_MIN) {
+          return { error: '그리드 범위(24:00)를 넘어 소요시간을 변경할 수 없습니다.' }
+        }
+        const conflict = (dayBlocks ?? []).some(
+          (o) =>
+            o.id !== b.id &&
+            o.date === b.date &&
+            overlaps(b.start_min, newEnd, o.start_min, o.end_min),
+        )
+        if (conflict) {
+          return {
+            error: '겹치는 블록이 있어 소요시간을 변경할 수 없습니다. 블록을 먼저 옮겨 주세요.',
+          }
+        }
+      }
+
+      for (const b of taskBlocks ?? []) {
+        const { error: resizeError } = await supabase
+          .from('blocks')
+          .update({ end_min: b.start_min + estMin })
+          .eq('id', b.id)
+          .eq('user_id', user.id)
+        if (resizeError) {
+          return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
+        }
+      }
+    }
   }
 
   const { error } = await supabase

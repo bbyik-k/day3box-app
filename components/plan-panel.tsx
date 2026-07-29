@@ -12,7 +12,7 @@ import {
   placeBlock,
 } from '@/app/tasks/actions'
 import type { CategoryKey } from '@/lib/category'
-import { categoryLabel } from '@/lib/category'
+import { CATEGORY_KEYS, categoryLabel } from '@/lib/category'
 import type { Tables } from '@/types/supabase'
 import { BrainDump } from '@/components/brain-dump'
 import { Top3Panel } from '@/components/top3-panel'
@@ -32,6 +32,18 @@ type OptimisticAction =
   | { type: 'estMin'; id: string; value: number | null }
   | { type: 'category'; id: string; value: CategoryKey }
 
+// TOP3 무조건 유색 — 승격 낙관 반영 시 서버와 동일한 결정적 규칙(미사용 첫 프리셋 색)으로
+// 색을 지정해 무채색 플래시를 막는다. refresh 후 서버 계산 결과와 일치한다
+function firstUnusedCategory(
+  state: PlanTask[],
+  excludeId?: string,
+): CategoryKey {
+  const used = state
+    .filter((t) => t.is_top3 && t.id !== excludeId)
+    .map((t) => t.category)
+  return CATEGORY_KEYS.find((key) => !used.includes(key)) ?? CATEGORY_KEYS[0]
+}
+
 function reduce(state: PlanTask[], action: OptimisticAction): PlanTask[] {
   switch (action.type) {
     case 'add':
@@ -47,19 +59,35 @@ function reduce(state: PlanTask[], action: OptimisticAction): PlanTask[] {
       ]
     case 'delete':
       return state.filter((t) => t.id !== action.id)
-    case 'toggleTop3':
+    case 'toggleTop3': {
+      const autoCat =
+        action.value ? firstUnusedCategory(state) : null
       return state.map((t) =>
-        t.id === action.id ? { ...t, is_top3: action.value } : t,
+        t.id === action.id
+          ? {
+              ...t,
+              is_top3: action.value,
+              category:
+                action.value && t.category === null ? autoCat : t.category,
+            }
+          : t,
       )
-    case 'swap':
+    }
+    case 'swap': {
       // 한 번의 map으로 두 항목을 동시에 갱신 — 화면에도 중간 상태(4개/2개)가 없다
+      const autoCat = firstUnusedCategory(state, action.demoteId)
       return state.map((t) =>
         t.id === action.demoteId
           ? { ...t, is_top3: false }
           : t.id === action.promoteId
-            ? { ...t, is_top3: true }
+            ? {
+                ...t,
+                is_top3: true,
+                category: t.category === null ? autoCat : t.category,
+              }
             : t,
       )
+    }
     case 'estMin':
       return state.map((t) =>
         t.id === action.id ? { ...t, est_min: action.value } : t,
@@ -181,9 +209,10 @@ export function PlanPanel({
     run({ type: 'category', id, value }, () => setCategory(id, value))
   }
 
-  // 배치는 슬롯 계산이 서버 단일 지점이라 낙관적 반영 없이 refresh() 결과를 기다린다
+  // 배치는 슬롯 계산이 서버 단일 지점이라 낙관적 반영 없이 refresh() 결과를 기다린다.
+  // 일반 task는 소요시간 미지정이어도 서버가 기본 30분으로 배치한다
   function handlePlace(task: PlanTask) {
-    if (task.est_min === null) {
+    if (task.is_top3 && task.est_min === null) {
       setError('소요시간을 먼저 입력해 주세요.')
       return
     }
@@ -204,6 +233,7 @@ export function PlanPanel({
         onAdd={handleAdd}
         onDelete={handleDelete}
         onToggleTop3={handleToggleTop3}
+        onPlace={handlePlace}
       />
 
       {/* 어제의 미배치 task — 소실되지 않고 여기서 접근·가져오기 가능 (길 B, PRD 3장) */}

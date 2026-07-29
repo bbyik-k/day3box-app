@@ -9,12 +9,17 @@
   --color-accent-2: #d6006c;
   --color-divider: rgba(32, 30, 29, 0.16);
 
-  /* 카테고리 5색 프리셋 — 색은 고정, 이름만 편집 가능 (PRD 7.1) */
+  /* 카테고리 5색 프리셋 — 색은 고정, 이름만 편집 가능 (PRD 7.1)
+     전부 유채색: TOP3(유색)와 일반 task 블록(무채색)을 색으로 구분한다
+     (2026-07-29 오너 결정 — 핸드오프의 회색 cat4·남색 cat5는 유색 구분 원칙 위반으로 교체) */
   --color-cat1: #0088b0;
   --color-cat2: #d6006c;
   --color-cat3: #edbb00;
-  --color-cat4: #7d7979;
-  --color-cat5: #006786;
+  --color-cat4: #7b52c7;
+  --color-cat5: #2f8f4e;
+
+  /* 중립 회색 — moved(이월) 스타일·무카테고리 블록 바 전용 (카테고리 색과 분리) */
+  --color-neutral: #7d7979;
 
   --font-serif: var(--font-source-serif), serif;
 
@@ -134,7 +139,8 @@
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     background: var(--color-surface);
-    border-left: 4px solid var(--cat, var(--color-divider));
+    /* 무카테고리(일반 task) 블록은 중립 회색 바 — TOP3의 유채색과 구분 */
+    border-left: 4px solid var(--cat, var(--color-neutral));
   }
 
   .top3-kicker {
@@ -209,7 +215,7 @@
   .grid-block[data-status='moved'] {
     background: transparent;
     box-shadow: none;
-    border-left: 4px dashed var(--color-cat4);
+    border-left: 4px dashed var(--color-neutral);
     border-top: 1px dashed var(--color-divider);
     border-right: 1px dashed var(--color-divider);
     border-bottom: 1px dashed var(--color-divider);

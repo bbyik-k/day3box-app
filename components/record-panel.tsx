@@ -52,7 +52,7 @@ export function RecordPanel({
             <div className="text-[12px] text-text/60 mt-1">부분</div>
           </div>
           <div>
-            <div className="text-[34px] font-semibold leading-none text-cat4">
+            <div className="text-[34px] font-semibold leading-none text-neutral">
               {movedCount}
             </div>
             <div className="text-[12px] text-text/60 mt-1">이월</div>

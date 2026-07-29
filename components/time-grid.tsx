@@ -108,7 +108,7 @@ export function TimeGrid({
           <span className="inline-flex items-center gap-[5px]">
             <span
               aria-hidden="true"
-              className="size-[9px] border border-dashed border-cat4"
+              className="size-[9px] border border-dashed border-neutral"
             />
             이월
           </span>
