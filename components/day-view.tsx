@@ -1,7 +1,9 @@
 'use client'
 
 import { useOptimistic, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { moveBlock, setBlockStatus } from '@/app/tasks/actions'
+import { shiftDate } from '@/lib/date'
 import { overlaps } from '@/lib/grid'
 import type { BlockStatus } from '@/types/block'
 import { PlanPanel } from '@/components/plan-panel'
@@ -14,14 +16,24 @@ type BlockAction =
   | { type: 'move'; id: string; start_min: number; end_min: number }
   | { type: 'status'; id: string; status: BlockStatus }
 
-// 선택(우측 그리드 클릭)과 편집 카드(좌측)가 열을 가로지르므로 상태를 여기서 소유한다
+// 선택(우측 그리드 클릭)과 편집 카드(좌측)가 열을 가로지르므로 상태를 여기서 소유한다.
+// 부모(page)가 key={date}로 리마운트해 날짜 전환 시 선택·낙관·토글 상태가 전량 초기화된다.
 export function DayView({
+  date,
+  isToday,
+  displayDate,
   tasks,
   blocks,
+  carryTasks,
 }: {
+  date: string
+  isToday: boolean
+  displayDate: string
   tasks: PlanTask[]
   blocks: BlockView[]
+  carryTasks: PlanTask[]
 }) {
+  const [mode, setMode] = useState<'plan' | 'record'>('plan')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
@@ -45,6 +57,8 @@ export function DayView({
 
   function handleSelect(id: string) {
     setSelectedId(id)
+    // 편집 카드는 저녁 기록 패널에 있다 — 계획 모드에서 선택하면 전환해 연동을 유지 (Task 007)
+    setMode('record')
   }
 
   function handleCommitMove(id: string, startMin: number, endMin: number) {
@@ -78,25 +92,82 @@ export function DayView({
   }
 
   return (
-    <div className="grid grid-cols-[352px_1fr] gap-8 items-start pt-6">
-      <div className="flex flex-col gap-6">
-        <PlanPanel tasks={tasks} />
-        <RecordPanel
-          tasks={tasks}
-          blocks={optimisticBlocks}
-          selectedBlock={selectedBlock}
-          onStatus={handleStatus}
-        />
+    <>
+      {/* 마스트헤드 — h1 날짜 + 아침/저녁 토글 + ‹어제 내일› (목업 정본 구조) */}
+      <div className="flex flex-wrap items-end justify-between gap-4 py-2">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-[40px] font-semibold leading-tight">
+            {displayDate}
+          </h1>
+          <span className="text-[14px] tracking-[0.04em] text-text/55">
+            타임박싱 플래너 · 계획 대비 실제
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="btn"
+            aria-pressed={mode === 'plan'}
+            onClick={() => setMode('plan')}
+          >
+            아침 계획
+          </button>
+          <button
+            type="button"
+            className="btn"
+            aria-pressed={mode === 'record'}
+            onClick={() => setMode('record')}
+          >
+            저녁 기록
+          </button>
+          <span
+            aria-hidden="true"
+            className="mx-1 h-[22px] w-px bg-divider"
+          />
+          <Link
+            href={{ pathname: '/', query: { date: shiftDate(date, -1) } }}
+            scroll={false}
+            className="btn-ghost"
+            data-testid="nav-prev"
+          >
+            ‹ 어제
+          </Link>
+          <Link
+            href={{ pathname: '/', query: { date: shiftDate(date, 1) } }}
+            scroll={false}
+            className="btn-ghost"
+            data-testid="nav-next"
+          >
+            내일 ›
+          </Link>
+        </div>
       </div>
-      <div className="border-l border-divider pl-6">
-        <TimeGrid
-          blocks={optimisticBlocks}
-          selectedId={selectedBlock?.id ?? null}
-          error={error}
-          onSelect={handleSelect}
-          onCommitMove={handleCommitMove}
-        />
+      <div aria-hidden="true" className="mb-6 h-px bg-text opacity-40" />
+
+      <div className="grid grid-cols-[352px_1fr] gap-8 items-start">
+        <div className="flex flex-col gap-6">
+          {mode === 'plan' ? (
+            <PlanPanel tasks={tasks} date={date} carryTasks={carryTasks} />
+          ) : (
+            <RecordPanel
+              tasks={tasks}
+              blocks={optimisticBlocks}
+              selectedBlock={selectedBlock}
+              onStatus={handleStatus}
+            />
+          )}
+        </div>
+        <div className="border-l border-divider pl-6">
+          <TimeGrid
+            blocks={optimisticBlocks}
+            selectedId={selectedBlock?.id ?? null}
+            isToday={isToday}
+            error={error}
+            onSelect={handleSelect}
+            onCommitMove={handleCommitMove}
+          />
+        </div>
       </div>
-    </div>
+    </>
   )
 }

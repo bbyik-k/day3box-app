@@ -3,6 +3,7 @@
 import { useOptimistic, useState, useTransition } from 'react'
 import {
   addTask,
+  carryTaskToDate,
   deleteTask,
   toggleTop3,
   swapTop3,
@@ -71,7 +72,15 @@ function reduce(state: PlanTask[], action: OptimisticAction): PlanTask[] {
 }
 
 // tasks prop은 항상 최신 canonical state — refresh() 후 useOptimistic이 자동 rebase된다
-export function PlanPanel({ tasks }: { tasks: PlanTask[] }) {
+export function PlanPanel({
+  tasks,
+  date,
+  carryTasks,
+}: {
+  tasks: PlanTask[]
+  date: string
+  carryTasks: PlanTask[]
+}) {
   const [error, setError] = useState<string | null>(null)
   const [swapTarget, setSwapTarget] = useState<PlanTask | null>(null)
   const [demoteId, setDemoteId] = useState<string | null>(null)
@@ -102,10 +111,22 @@ export function PlanPanel({ tasks }: { tasks: PlanTask[] }) {
       tempId: `temp-${crypto.randomUUID()}`,
       title,
     })
-    const result = await addTask(title)
+    const result = await addTask(title, date)
     if (result?.error) {
       setError(result.error)
     }
+  }
+
+  // 이월 가져오기 — task.date 이동은 서버가 단일 진실 지점(block 유무 검증 포함)이라
+  // 낙관 반영 없이 refresh() 결과를 기다린다 (placeBlock과 동일 패턴)
+  function handleCarry(task: PlanTask) {
+    startTransition(async () => {
+      setError(null)
+      const result = await carryTaskToDate(task.id, date)
+      if (result?.error) {
+        setError(result.error)
+      }
+    })
   }
 
   function handleDelete(id: string) {
@@ -173,6 +194,30 @@ export function PlanPanel({ tasks }: { tasks: PlanTask[] }) {
         onDelete={handleDelete}
         onToggleTop3={handleToggleTop3}
       />
+
+      {/* 어제의 미배치 task — 소실되지 않고 여기서 접근·가져오기 가능 (길 B, PRD 3장) */}
+      {carryTasks.length > 0 && (
+        <section data-testid="carry-section">
+          <h6 className="text-[13px] font-semibold uppercase tracking-[0.08em]">
+            어제에서 이월
+          </h6>
+          <ul className="mt-2 flex flex-col">
+            {carryTasks.map((task) => (
+              <li key={task.id} className="dump-row">
+                <span className="flex-1 text-text/70">{task.title}</span>
+                <button
+                  type="button"
+                  onClick={() => handleCarry(task)}
+                  className="shrink-0 text-[12px] text-accent hover:text-accent-2"
+                >
+                  가져오기 →
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <Top3Panel
         topTasks={topTasks}
         onDemote={handleToggleTop3}

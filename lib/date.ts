@@ -6,6 +6,37 @@ export function todayInSeoul(): string {
   )
 }
 
+// YYYY-MM-DD 형식 + 실존 날짜 검증 — URL 파라미터는 신뢰할 수 없다 (2월 30일 등 거부)
+export function isValidDateStr(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return false
+  }
+  const [y, m, d] = s.split('-').map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d))
+  return (
+    date.getUTCFullYear() === y &&
+    date.getUTCMonth() === m - 1 &&
+    date.getUTCDate() === d
+  )
+}
+
+// 날짜 문자열 ±N일 — 순수 달력 연산이라 UTC 산술이면 타임존 무관
+export function shiftDate(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number)
+  const shifted = new Date(Date.UTC(y, m - 1, d + days))
+  return shifted.toISOString().slice(0, 10)
+}
+
+// "7월 29일 화요일" — UTC 자정 생성 + UTC 포맷 조합이라 서버 타임존과 무관하게 요일이 정확
+export function formatDisplayDate(date: string): string {
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'UTC',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  }).format(new Date(`${date}T00:00:00Z`))
+}
+
 // 현재 시각을 자정 기준 분으로 (Asia/Seoul 고정 — 그리드 "지금" 라인용)
 export function nowMinutesInSeoul(): number {
   const parts = new Intl.DateTimeFormat('en-GB', {

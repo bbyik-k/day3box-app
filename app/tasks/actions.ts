@@ -3,7 +3,7 @@
 import { refresh } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { nowMinutesInSeoul, todayInSeoul } from '@/lib/date'
+import { isValidDateStr, nowMinutesInSeoul, todayInSeoul } from '@/lib/date'
 import { isCategoryKey } from '@/lib/category'
 import { isBlockStatus } from '@/types/block'
 import {
@@ -18,10 +18,14 @@ const TOP3_LIMIT = 3
 
 export async function addTask(
   title: string,
+  date: string,
 ): Promise<{ error: string } | undefined> {
   const trimmed = title.trim()
   if (trimmed === '') {
     return { error: '할 일 내용을 입력해 주세요.' }
+  }
+  if (!isValidDateStr(date)) {
+    return { error: '유효하지 않은 날짜입니다.' }
   }
 
   const supabase = await createClient()
@@ -34,7 +38,7 @@ export async function addTask(
 
   const { error } = await supabase.from('tasks').insert({
     user_id: user.id,
-    date: todayInSeoul(),
+    date,
     title: trimmed,
   })
   if (error) {
@@ -80,13 +84,23 @@ export async function toggleTop3(
     redirect('/login')
   }
 
-  // 하드 제한 백스톱 — 정상 경로는 클라이언트가 교체 모달로 선점하지만 서버에서도 봉인
+  // 하드 제한 백스톱 — 정상 경로는 클라이언트가 교체 모달로 선점하지만 서버에서도 봉인.
+  // 카운트 기준 날짜는 대상 task.date에서 유도한다 (클라이언트 전달값은 신뢰하지 않는다)
   if (next) {
+    const { data: task, error: taskError } = await supabase
+      .from('tasks')
+      .select('id, date')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single()
+    if (taskError || !task) {
+      return { error: '항목을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.' }
+    }
     const { count } = await supabase
       .from('tasks')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .eq('date', todayInSeoul())
+      .eq('date', task.date)
       .eq('is_top3', true)
     if ((count ?? 0) >= TOP3_LIMIT) {
       return { error: 'TOP 3가 가득 찼습니다. 하나를 내려 주세요.' }
@@ -124,6 +138,17 @@ export async function swapTop3(
     redirect('/login')
   }
 
+  // 재카운트 기준 날짜는 승격 대상 task.date에서 유도 (toggleTop3과 동일 원칙)
+  const { data: promoteTask, error: promoteTaskError } = await supabase
+    .from('tasks')
+    .select('id, date')
+    .eq('id', promoteId)
+    .eq('user_id', user.id)
+    .single()
+  if (promoteTaskError || !promoteTask) {
+    return { error: '교체에 실패했습니다. 새로고침 후 다시 시도해 주세요.' }
+  }
+
   const { data: demoted, error: demoteError } = await supabase
     .from('tasks')
     .update({ is_top3: false })
@@ -139,7 +164,7 @@ export async function swapTop3(
     .from('tasks')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .eq('date', todayInSeoul())
+    .eq('date', promoteTask.date)
     .eq('is_top3', true)
   if ((count ?? 0) >= TOP3_LIMIT) {
     return { error: 'TOP 3가 가득 찼습니다. 하나를 내려 주세요.' }
@@ -194,7 +219,11 @@ export async function placeBlock(
   }
 
   const existing = blocks ?? []
-  let start = Math.max(ceilToSnap(nowMinutesInSeoul()), GRID_START_MIN)
+  // 오늘은 "지금 이후 다음 빈 슬롯", 다른 날짜(내일 계획·과거 보정)는 06:00부터 탐색
+  let start =
+    task.date === todayInSeoul()
+      ? Math.max(ceilToSnap(nowMinutesInSeoul()), GRID_START_MIN)
+      : GRID_START_MIN
   let found: { start: number; end: number } | null = null
   while (start + task.est_min <= GRID_END_MIN) {
     const end = start + task.est_min
@@ -206,7 +235,7 @@ export async function placeBlock(
     start += SNAP_MIN
   }
   if (found === null) {
-    return { error: '오늘 그리드에 빈 자리가 없습니다.' }
+    return { error: '그리드에 빈 자리가 없습니다.' }
   }
 
   const { error } = await supabase.from('blocks').insert({
@@ -369,6 +398,50 @@ export async function setCategory(
     .eq('user_id', user.id)
   if (error) {
     return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  refresh()
+}
+
+// 미배치 task 이월("오늘 못 한 걸 내일로" — 길 B의 존재 이유): task.date를 대상 날짜로 이동.
+// block이 하나라도 있으면 거부 — blocks.date가 비정규화라 task.date만 바꾸면 고아 블록이 된다.
+export async function carryTaskToDate(
+  id: string,
+  targetDate: string,
+): Promise<{ error: string } | undefined> {
+  if (!isValidDateStr(targetDate)) {
+    return { error: '유효하지 않은 날짜입니다.' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { count, error: countError } = await supabase
+    .from('blocks')
+    .select('id', { count: 'exact', head: true })
+    .eq('task_id', id)
+    .eq('user_id', user.id)
+  if (countError) {
+    return { error: '가져오기에 실패했습니다. 다시 시도해 주세요.' }
+  }
+  if ((count ?? 0) > 0) {
+    return { error: '이미 배치된 항목은 가져올 수 없습니다.' }
+  }
+
+  // is_top3 리셋 — 대상 날짜의 TOP3 하드 제한(3개)을 이월이 우회하지 못하게 한다
+  const { data: updated, error } = await supabase
+    .from('tasks')
+    .update({ date: targetDate, is_top3: false })
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select('id')
+  if (error || !updated || updated.length === 0) {
+    return { error: '가져오기에 실패했습니다. 다시 시도해 주세요.' }
   }
 
   refresh()

@@ -242,4 +242,36 @@
     outline: 2px solid var(--color-accent);
     outline-offset: -2px;
   }
+
+  /* 마스트헤드 버튼 — 아침/저녁 토글(활성=accent 채움)과 ‹어제 내일› 내비 (목업 .btn/.btn-ghost) */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    padding: 6px 14px;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .btn:hover {
+    border-color: var(--color-text);
+  }
+  .btn[aria-pressed='true'] {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-bg);
+    font-weight: 600;
+  }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    padding: 6px 6px;
+    border: none;
+    color: var(--color-accent);
+    cursor: pointer;
+  }
+  .btn-ghost:hover {
+    color: var(--color-accent-2);
+  }
 }

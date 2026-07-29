@@ -42,12 +42,14 @@ function serverNowSnapshot(): number | null {
 export function TimeGrid({
   blocks,
   selectedId,
+  isToday,
   error,
   onSelect,
   onCommitMove,
 }: {
   blocks: BlockView[]
   selectedId: string | null
+  isToday: boolean
   error: string | null
   onSelect: (id: string) => void
   onCommitMove: (id: string, startMin: number, endMin: number) => void
@@ -61,10 +63,12 @@ export function TimeGrid({
   const scrollRef = useRef<HTMLDivElement>(null)
   const didAutoScroll = useRef(false)
 
-  // 진입 시 현재 시각으로 자동 스크롤 (PRD 7.1 #1 — 범위보다 스크롤 위치가 체감 UX를 좌우)
+  // 진입 시 현재 시각으로 자동 스크롤 (PRD 7.1 #1 — 범위보다 스크롤 위치가 체감 UX를 좌우).
+  // 오늘이 아니면 스킵 — 과거/미래 날짜는 06:00부터 보여준다 (리셋은 key={date} 리마운트가 담당)
   useEffect(() => {
     const container = scrollRef.current
     if (
+      !isToday ||
       nowMin === null ||
       didAutoScroll.current ||
       container === null ||
@@ -75,10 +79,14 @@ export function TimeGrid({
     }
     didAutoScroll.current = true
     container.scrollTop = minToY(nowMin) - container.clientHeight / 2
-  }, [nowMin])
+  }, [nowMin, isToday])
 
+  // "지금" 라인은 오늘 그리드에만 — 다른 날짜의 시각 표시는 거짓말이 된다
   const showNowLine =
-    nowMin !== null && nowMin >= GRID_START_MIN && nowMin <= GRID_END_MIN
+    isToday &&
+    nowMin !== null &&
+    nowMin >= GRID_START_MIN &&
+    nowMin <= GRID_END_MIN
 
   return (
     <section>
