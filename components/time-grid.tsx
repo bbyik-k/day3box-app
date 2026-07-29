@@ -46,6 +46,7 @@ export function TimeGrid({
   error,
   onSelect,
   onCommitMove,
+  onDelete,
 }: {
   blocks: BlockView[]
   selectedId: string | null
@@ -53,6 +54,7 @@ export function TimeGrid({
   error: string | null
   onSelect: (id: string) => void
   onCommitMove: (id: string, startMin: number, endMin: number) => void
+  onDelete: (id: string) => void
 }) {
   // 서버 스냅샷은 null — 지금 라인은 클라이언트에서만 렌더돼 hydration 불일치가 없다
   const nowMin = useSyncExternalStore<number | null>(
@@ -148,6 +150,7 @@ export function TimeGrid({
               selected={block.id === selectedId}
               onCommit={onCommitMove}
               onSelect={onSelect}
+              onDelete={onDelete}
             />
           ))}
 

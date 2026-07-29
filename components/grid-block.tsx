@@ -45,11 +45,13 @@ export function GridBlock({
   selected,
   onCommit,
   onSelect,
+  onDelete,
 }: {
   block: BlockView
   selected: boolean
   onCommit: (id: string, startMin: number, endMin: number) => void
   onSelect: (id: string) => void
+  onDelete: (id: string) => void
 }) {
   const [drag, setDrag] = useState<DragState | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -201,6 +203,21 @@ export function GridBlock({
           </div>
         )}
       </div>
+
+      {/* 배치 취소 × — hover/선택 시 노출. pointerdown 차단으로 드래그·선택과 충돌하지 않는다.
+          15분 블록엔 안 들어가므로 top 핸들과 같은 기준으로 생략 (편집 카드 경로 사용) */}
+      {heightPx >= 18 && (
+        <button
+          type="button"
+          aria-label={`${block.title} 배치 취소`}
+          data-testid="block-delete-grid"
+          className="block-delete absolute right-1 top-0.5 z-10 px-1 py-0.5 text-[13px] leading-none"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => onDelete(block.id)}
+        >
+          ×
+        </button>
+      )}
 
       {/* 리사이즈 핸들 — 15분 블록(10.5px)은 본문이 없어지므로 top 핸들 생략 */}
       {heightPx >= 18 && (

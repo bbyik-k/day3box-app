@@ -111,6 +111,20 @@
   /* 노랑(cat3)은 밝은 배경 위 텍스트 가독성이 나빠 잉크만 중립으로 (목업의 neutral 대체 재현) */
   .top3-card[data-cat='cat3'] { --cat-ink: color-mix(in srgb, var(--color-text) 70%, transparent); }
 
+  /* 블록 배치 취소 × — dump-delete와 같은 hover 노출 관례, 선택된 블록은 상시 노출 */
+  .grid-block .block-delete {
+    opacity: 0;
+    color: color-mix(in srgb, var(--color-text) 40%, transparent);
+  }
+  .grid-block:hover .block-delete,
+  .grid-block[data-selected] .block-delete,
+  .grid-block .block-delete:focus-visible {
+    opacity: 1;
+  }
+  .grid-block .block-delete:hover {
+    color: var(--color-accent-2);
+  }
+
   /* 타임 그리드 블록 (목업 .tb-block) */
   .grid-block {
     position: absolute;

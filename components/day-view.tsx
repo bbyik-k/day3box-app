@@ -178,6 +178,7 @@ export function DayView({
             error={error}
             onSelect={handleSelect}
             onCommitMove={handleCommitMove}
+            onDelete={handleDeleteBlock}
           />
         </div>
       </div>
