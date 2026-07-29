@@ -142,7 +142,8 @@ export function GridBlock({
   const endMin = dragging ? drag.tempEnd : block.end_min
   const duration = endMin - startMin
   const heightPx = (duration / 60) * PX_PER_HOUR
-  const compact = duration < 45
+  // 길이별 3단계 레이아웃 (2026-07-29 시안): full 2줄 / line 한 줄 / micro 초경량 한 줄
+  const tier = duration >= 45 ? 'full' : duration >= 30 ? 'line' : 'micro'
 
   const status = isBlockStatus(block.status) ? block.status : 'planned'
   const moved = status === 'moved'
@@ -182,16 +183,16 @@ export function GridBlock({
       onPointerUp={handleUp}
       onPointerCancel={handleCancel}
     >
-      <div className={compact ? 'px-[10px] py-[3px]' : 'px-[10px] py-[7px]'}>
-        <div className="flex items-center gap-1">
-          <div
-            className={`font-semibold truncate flex-1 ${compact ? 'text-[13px]' : 'text-[14px]'} ${moved ? 'text-text/50' : ''}`}
-          >
-            {block.title}
+      {tier === 'full' ? (
+        <div className="px-[10px] py-[7px]">
+          <div className="flex items-center gap-1">
+            <div
+              className={`font-semibold truncate flex-1 text-[14px] ${moved ? 'text-text/50' : ''}`}
+            >
+              {block.title}
+            </div>
+            {statusTag}
           </div>
-          {statusTag}
-        </div>
-        {!compact && (
           <div className="text-[11px] text-text/60 mt-[2px]">
             {moved
               ? '→ 내일로 이월'
@@ -201,8 +202,29 @@ export function GridBlock({
                     : ''
                 }`}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        // line(30~44분)·micro(15~29분): 한 줄 — 제목 좌측 + 시간 우측 (우측은 늘 여백이라 겹침 없음)
+        <div
+          className={`h-full flex items-center gap-2 px-[10px] leading-none ${
+            tier === 'micro' ? 'text-[12px]' : 'text-[13px]'
+          }`}
+        >
+          <div
+            className={`font-semibold truncate flex-1 ${moved ? 'text-text/50' : ''}`}
+          >
+            {block.title}
+          </div>
+          {statusTag}
+          <span className="shrink-0 text-[11px] text-text/60">
+            {moved
+              ? '→ 내일로 이월'
+              : tier === 'micro'
+                ? `${formatMin(startMin)} · ${duration}분`
+                : `${formatMin(startMin)}–${formatMin(endMin)} · ${duration}분`}
+          </span>
+        </div>
+      )}
 
       {/* 배치 취소 × — hover/선택 시 노출. pointerdown 차단으로 드래그·선택과 충돌하지 않는다.
           15분 블록엔 안 들어가므로 top 핸들과 같은 기준으로 생략 (편집 카드 경로 사용) */}
@@ -211,7 +233,7 @@ export function GridBlock({
           type="button"
           aria-label={`${block.title} 배치 취소`}
           data-testid="block-delete-grid"
-          className="block-delete absolute right-1 top-0.5 z-10 px-1 py-0.5 text-[13px] leading-none"
+          className="block-delete absolute right-1 top-0.5 z-10 px-1 py-0.5 text-[13px] leading-none bg-surface"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onDelete(block.id)}
         >

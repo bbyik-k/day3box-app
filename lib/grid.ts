@@ -1,8 +1,10 @@
-// 타임 그리드 좌표계 (PRD 7.1 #1: 06:00–24:00 고정, 목업: 1시간 = 42px)
+// 타임 그리드 좌표계 (PRD 7.1 #1: 06:00–24:00 고정)
 // 분 ↔ y좌표가 단순 산술이 되도록 시간은 int(자정 기준 분)로만 다룬다
+// 1시간 = 60px (1분 = 1px) — 구 목업 42px에서 2026-07-29 시안(captures/03-edit-timebox.png)으로 변경.
+// 15분 스냅이 15px 정수가 되고, 15분 블록도 텍스트 한 줄이 들어간다
 export const GRID_START_MIN = 6 * 60
 export const GRID_END_MIN = 24 * 60
-export const PX_PER_HOUR = 42
+export const PX_PER_HOUR = 60
 
 export const GRID_HOURS = (GRID_END_MIN - GRID_START_MIN) / 60
 export const GRID_HEIGHT_PX = GRID_HOURS * PX_PER_HOUR

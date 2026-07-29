@@ -160,7 +160,8 @@ export function TimeGrid({
               style={{ top: minToY(nowMin) }}
               data-testid="now-line"
             >
-              <span className="absolute left-3 -top-2 text-[10px] tracking-[0.04em] bg-accent-2 text-bg px-[5px] py-px">
+              {/* 라벨은 우측 — 블록 텍스트가 좌측 정렬이라 우측은 늘 여백 (2026-07-29 시안) */}
+              <span className="absolute right-2 -top-2 text-[10px] tracking-[0.04em] bg-accent-2 text-bg px-[5px] py-px">
                 지금 {formatMin(nowMin)}
               </span>
             </div>
