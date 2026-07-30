@@ -22,20 +22,41 @@ export default async function Home(props: {
   const date =
     typeof raw === 'string' && isValidDateStr(raw) ? raw : todayInSeoul()
 
-  const { data: tasks } = await supabase
-    .from('tasks')
-    .select('id, title, is_top3, est_min, category')
-    .eq('user_id', user.id)
-    .eq('date', date)
-    .order('created_at', { ascending: true })
-
-  // block 조회는 비정규화된 blocks.date로 조인 없이 — 제목·카테고리는 task에서 읽는다
-  const { data: blocks } = await supabase
-    .from('blocks')
-    .select('id, task_id, start_min, end_min, status')
-    .eq('user_id', user.id)
-    .eq('date', date)
-    .order('start_min', { ascending: true })
+  // 4개 쿼리 병렬 — 순차 왕복(리전 간 지연 누적)을 1왕복으로 (2026-07-30 성능 개선)
+  const prevDate = shiftDate(date, -1)
+  const [
+    { data: tasks },
+    { data: blocks },
+    { data: prevTasks },
+    { data: prevBlocks },
+  ] = await Promise.all([
+    supabase
+      .from('tasks')
+      .select('id, title, is_top3, est_min, category')
+      .eq('user_id', user.id)
+      .eq('date', date)
+      .order('created_at', { ascending: true }),
+    // block 조회는 비정규화된 blocks.date로 조인 없이 — 제목·카테고리는 task에서 읽는다
+    supabase
+      .from('blocks')
+      .select('id, task_id, start_min, end_min, status')
+      .eq('user_id', user.id)
+      .eq('date', date)
+      .order('start_min', { ascending: true }),
+    // 미배치 task 이월 노출(길 B) — 전날 tasks + 전날 blocks의 task_id 두 쿼리 후 필터
+    // (PostgREST에 NOT EXISTS가 없다)
+    supabase
+      .from('tasks')
+      .select('id, title, is_top3, est_min, category')
+      .eq('user_id', user.id)
+      .eq('date', prevDate)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('blocks')
+      .select('task_id')
+      .eq('user_id', user.id)
+      .eq('date', prevDate),
+  ])
 
   const taskById = new Map((tasks ?? []).map((t) => [t.id, t]))
   const blockViews = (blocks ?? []).map((b) => {
@@ -51,20 +72,6 @@ export default async function Home(props: {
     }
   })
 
-  // 미배치 task 이월 노출(길 B) — 보고 있는 날짜의 전날에서 배치되지 않은 task만.
-  // PostgREST에 NOT EXISTS가 없어 전날 tasks + 전날 blocks의 task_id 두 쿼리 후 필터
-  const prevDate = shiftDate(date, -1)
-  const { data: prevTasks } = await supabase
-    .from('tasks')
-    .select('id, title, is_top3, est_min, category')
-    .eq('user_id', user.id)
-    .eq('date', prevDate)
-    .order('created_at', { ascending: true })
-  const { data: prevBlocks } = await supabase
-    .from('blocks')
-    .select('task_id')
-    .eq('user_id', user.id)
-    .eq('date', prevDate)
   const placedIds = new Set((prevBlocks ?? []).map((b) => b.task_id))
   const carryTasks = (prevTasks ?? []).filter((t) => !placedIds.has(t.id))
 

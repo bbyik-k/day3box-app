@@ -348,6 +348,8 @@ v3+ — 차트·반복 블록·알림 등 (논의 자체를 보류)
 - 본인 실사용 시작: 아침 계획 + 저녁 기록
 
 > **2026-07-30 배포 완료**: 프로덕션 URL `https://day3box-app.vercel.app` (Vercel 대시보드 GitHub 연동 — main push마다 자동 배포). env는 `NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 2개만. 인증이 이메일+비밀번호라 리다이렉트 URL 등록은 불필요했음(Site URL 설정만 선택 사항).
+>
+> **2026-07-30 실사용 1일차 피드백 → 성능 개선**: 날짜 이동·TOP3 변경→그리드 동기화가 1초+ 지연. 측정 결과 원인은 **Vercel 함수 리전(기본 iad1·미국 동부)과 Supabase(서울) 불일치** — 렌더당 순차 왕복 6회(proxy getUser + page getUser + 쿼리 4) × 서울↔미국 200ms. 해결: `vercel.json regions:["icn1"]`(함수 서울 고정) + page 쿼리 4개 `Promise.all` 병렬화 + `loading.tsx`(전환 즉시 피드백). 배제한 대안: proxy getClaims 로컬 검증·그리드 낙관 동기화 확장 — 리전 정렬 후 재측정으로 필요 시에만.
 
 **수락 기준**
 - [x] 프로덕션 URL에서 F1~F9 전체 플로우가 동작한다 (2026-07-30 Playwright 스모크: 로그인 → brain dump 4건 → TOP3 3개 승격·자동 색 → 4번째 교체 모달 → est_min 입력·배치 + 일반 task 30분 배치 → 드래그 15분 스냅 → 완료 토글·요약 집계 → 새로고침 영속 → 익일 이동·빈 그리드·이월 노출 확인 후 테스트 데이터 정리)
