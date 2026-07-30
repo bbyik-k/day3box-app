@@ -58,20 +58,8 @@ export default async function Home(props: {
       .eq('date', prevDate),
   ])
 
-  const taskById = new Map((tasks ?? []).map((t) => [t.id, t]))
-  const blockViews = (blocks ?? []).map((b) => {
-    const task = taskById.get(b.task_id)
-    return {
-      id: b.id,
-      task_id: b.task_id,
-      start_min: b.start_min,
-      end_min: b.end_min,
-      status: b.status,
-      title: task?.title ?? '(삭제된 항목)',
-      category: task?.category ?? null,
-    }
-  })
-
+  // 블록의 제목·카테고리 조인은 클라이언트(DayView)에서 낙관 tasks 기준으로 파생 —
+  // 색·분·삭제가 카드와 그리드에 동시 반영되게 한다
   const placedIds = new Set((prevBlocks ?? []).map((b) => b.task_id))
   const carryTasks = (prevTasks ?? []).filter((t) => !placedIds.has(t.id))
 
@@ -98,7 +86,7 @@ export default async function Home(props: {
         isToday={date === todayInSeoul()}
         displayDate={formatDisplayDate(date)}
         tasks={tasks ?? []}
-        blocks={blockViews}
+        blocks={blocks ?? []}
         carryTasks={carryTasks}
       />
     </main>

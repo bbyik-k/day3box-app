@@ -28,6 +28,29 @@ export function roundToSnap(min: number): number {
   return Math.round(min / SNAP_MIN) * SNAP_MIN
 }
 
+// 다음 빈 슬롯 탐색 — 배치의 단일 로직 (서버 placeBlock과 클라이언트 낙관 미리보기가 공용,
+// 같은 코드라 정상 흐름에서 낙관 슬롯 = 서버 확정 슬롯)
+export function findNextFreeSlot(
+  existing: { start_min: number; end_min: number }[],
+  durationMin: number,
+  fromMin: number,
+): { start: number; end: number } | null {
+  let start = Math.max(ceilToSnap(fromMin), GRID_START_MIN)
+  while (start + durationMin <= GRID_END_MIN) {
+    const end = start + durationMin
+    const candidateStart = start
+    if (
+      !existing.some((b) =>
+        overlaps(candidateStart, end, b.start_min, b.end_min),
+      )
+    ) {
+      return { start, end }
+    }
+    start += SNAP_MIN
+  }
+  return null
+}
+
 // [aStart, aEnd)와 [bStart, bEnd)의 겹침 판정 — 경계 접촉(end === start)은 겹침 아님
 export function overlaps(
   aStart: number,

@@ -1,18 +1,8 @@
 'use client'
 
-import { useOptimistic, useState, useTransition } from 'react'
-import {
-  addTask,
-  carryTaskToDate,
-  deleteTask,
-  toggleTop3,
-  swapTop3,
-  setEstMin,
-  setCategory,
-  placeBlock,
-} from '@/app/tasks/actions'
+import { useState } from 'react'
 import type { CategoryKey } from '@/lib/category'
-import { CATEGORY_KEYS, categoryLabel } from '@/lib/category'
+import { categoryLabel } from '@/lib/category'
 import type { Tables } from '@/types/supabase'
 import { BrainDump } from '@/components/brain-dump'
 import { Top3Panel } from '@/components/top3-panel'
@@ -24,154 +14,41 @@ export type PlanTask = Pick<
 
 const TOP3_LIMIT = 3
 
-type OptimisticAction =
-  | { type: 'add'; tempId: string; title: string }
-  | { type: 'delete'; id: string }
-  | { type: 'toggleTop3'; id: string; value: boolean }
-  | { type: 'swap'; demoteId: string; promoteId: string }
-  | { type: 'estMin'; id: string; value: number | null }
-  | { type: 'category'; id: string; value: CategoryKey }
-
-// TOP3 무조건 유색 — 승격 낙관 반영 시 서버와 동일한 결정적 규칙(미사용 첫 프리셋 색)으로
-// 색을 지정해 무채색 플래시를 막는다. refresh 후 서버 계산 결과와 일치한다
-function firstUnusedCategory(
-  state: PlanTask[],
-  excludeId?: string,
-): CategoryKey {
-  const used = state
-    .filter((t) => t.is_top3 && t.id !== excludeId)
-    .map((t) => t.category)
-  return CATEGORY_KEYS.find((key) => !used.includes(key)) ?? CATEGORY_KEYS[0]
-}
-
-function reduce(state: PlanTask[], action: OptimisticAction): PlanTask[] {
-  switch (action.type) {
-    case 'add':
-      return [
-        ...state,
-        {
-          id: action.tempId,
-          title: action.title,
-          is_top3: false,
-          est_min: null,
-          category: null,
-        },
-      ]
-    case 'delete':
-      return state.filter((t) => t.id !== action.id)
-    case 'toggleTop3': {
-      const autoCat =
-        action.value ? firstUnusedCategory(state) : null
-      return state.map((t) =>
-        t.id === action.id
-          ? {
-              ...t,
-              is_top3: action.value,
-              category:
-                action.value && t.category === null ? autoCat : t.category,
-            }
-          : t,
-      )
-    }
-    case 'swap': {
-      // 한 번의 map으로 두 항목을 동시에 갱신 — 화면에도 중간 상태(4개/2개)가 없다
-      const autoCat = firstUnusedCategory(state, action.demoteId)
-      return state.map((t) =>
-        t.id === action.demoteId
-          ? { ...t, is_top3: false }
-          : t.id === action.promoteId
-            ? {
-                ...t,
-                is_top3: true,
-                category: t.category === null ? autoCat : t.category,
-              }
-            : t,
-      )
-    }
-    case 'estMin':
-      return state.map((t) =>
-        t.id === action.id ? { ...t, est_min: action.value } : t,
-      )
-    case 'category':
-      return state.map((t) =>
-        t.id === action.id ? { ...t, category: action.value } : t,
-      )
-  }
-}
-
-// tasks prop은 항상 최신 canonical state — refresh() 후 useOptimistic이 자동 rebase된다
+// 프레젠테이션 컴포넌트 — 낙관 상태·서버 액션은 DayView가 소유하고,
+// 여기는 교체 모달 로컬 상태와 하드 제한(3개) 선분기만 담당한다
 export function PlanPanel({
   tasks,
-  date,
   carryTasks,
+  error,
+  onAdd,
+  onDelete,
+  onToggleTop3,
+  onSwap,
+  onEstMin,
+  onCategory,
+  onPlace,
+  onCarry,
+  onCarryDelete,
 }: {
   tasks: PlanTask[]
-  date: string
   carryTasks: PlanTask[]
+  error: string | null
+  onAdd: (title: string) => Promise<void>
+  onDelete: (id: string) => void
+  onToggleTop3: (task: PlanTask, next: boolean) => void
+  onSwap: (demoteId: string, promoteId: string) => void
+  onEstMin: (id: string, value: number | null) => void
+  onCategory: (id: string, value: CategoryKey) => void
+  onPlace: (task: PlanTask) => void
+  onCarry: (id: string) => void
+  onCarryDelete: (id: string) => void
 }) {
-  const [error, setError] = useState<string | null>(null)
   const [swapTarget, setSwapTarget] = useState<PlanTask | null>(null)
   const [demoteId, setDemoteId] = useState<string | null>(null)
-  const [, startTransition] = useTransition()
 
-  const [optimisticTasks, applyOptimistic] = useOptimistic(tasks, reduce)
-  const topTasks = optimisticTasks.filter((t) => t.is_top3)
+  const topTasks = tasks.filter((t) => t.is_top3)
 
-  function run(
-    action: OptimisticAction,
-    serverCall: () => Promise<{ error: string } | undefined>,
-  ) {
-    startTransition(async () => {
-      setError(null)
-      applyOptimistic(action)
-      const result = await serverCall()
-      if (result?.error) {
-        setError(result.error)
-      }
-    })
-  }
-
-  // form action(자동 transition) 안에서 호출됨 — 별도 startTransition 불필요
-  async function handleAdd(title: string) {
-    setError(null)
-    applyOptimistic({
-      type: 'add',
-      tempId: `temp-${crypto.randomUUID()}`,
-      title,
-    })
-    const result = await addTask(title, date)
-    if (result?.error) {
-      setError(result.error)
-    }
-  }
-
-  // 이월 가져오기 — task.date 이동은 서버가 단일 진실 지점(block 유무 검증 포함)이라
-  // 낙관 반영 없이 refresh() 결과를 기다린다 (placeBlock과 동일 패턴)
-  function handleCarry(task: PlanTask) {
-    startTransition(async () => {
-      setError(null)
-      const result = await carryTaskToDate(task.id, date)
-      if (result?.error) {
-        setError(result.error)
-      }
-    })
-  }
-
-  // 이월 즉시 삭제 — 가져온 뒤 지우는 2단계 우회 제거. carryTasks는 서버 prop이라 낙관 범위 밖
-  function handleCarryDelete(task: PlanTask) {
-    startTransition(async () => {
-      setError(null)
-      const result = await deleteTask(task.id)
-      if (result?.error) {
-        setError(result.error)
-      }
-    })
-  }
-
-  function handleDelete(id: string) {
-    run({ type: 'delete', id }, () => deleteTask(id))
-  }
-
+  // 4번째 승격 시도 → 단순 차단이 아니라 교체 모달 (PRD 7.1)
   function handleToggleTop3(task: PlanTask) {
     const next = !task.is_top3
     if (next && topTasks.length >= TOP3_LIMIT) {
@@ -179,9 +56,7 @@ export function PlanPanel({
       setSwapTarget(task)
       return
     }
-    run({ type: 'toggleTop3', id: task.id, value: next }, () =>
-      toggleTop3(task.id, next),
-    )
+    onToggleTop3(task, next)
   }
 
   function closeSwapModal() {
@@ -196,44 +71,18 @@ export function PlanPanel({
     const demote = demoteId
     const promote = swapTarget.id
     closeSwapModal()
-    run({ type: 'swap', demoteId: demote, promoteId: promote }, () =>
-      swapTop3(demote, promote),
-    )
-  }
-
-  function handleEstMin(id: string, value: number | null) {
-    run({ type: 'estMin', id, value }, () => setEstMin(id, value))
-  }
-
-  function handleCategory(id: string, value: CategoryKey) {
-    run({ type: 'category', id, value }, () => setCategory(id, value))
-  }
-
-  // 배치는 슬롯 계산이 서버 단일 지점이라 낙관적 반영 없이 refresh() 결과를 기다린다.
-  // 일반 task는 소요시간 미지정이어도 서버가 기본 30분으로 배치한다
-  function handlePlace(task: PlanTask) {
-    if (task.is_top3 && task.est_min === null) {
-      setError('소요시간을 먼저 입력해 주세요.')
-      return
-    }
-    startTransition(async () => {
-      setError(null)
-      const result = await placeBlock(task.id)
-      if (result?.error) {
-        setError(result.error)
-      }
-    })
+    onSwap(demote, promote)
   }
 
   return (
     <div className="flex flex-col gap-6">
       <BrainDump
-        tasks={optimisticTasks}
+        tasks={tasks}
         error={error}
-        onAdd={handleAdd}
-        onDelete={handleDelete}
+        onAdd={onAdd}
+        onDelete={onDelete}
         onToggleTop3={handleToggleTop3}
-        onPlace={handlePlace}
+        onPlace={onPlace}
       />
 
       {/* 어제의 미배치 task — 소실되지 않고 여기서 접근·가져오기 가능 (길 B, PRD 3장) */}
@@ -248,7 +97,7 @@ export function PlanPanel({
                 <span className="flex-1 text-text/70">{task.title}</span>
                 <button
                   type="button"
-                  onClick={() => handleCarry(task)}
+                  onClick={() => onCarry(task.id)}
                   className="shrink-0 text-[12px] text-accent hover:text-accent-2"
                 >
                   가져오기 →
@@ -257,7 +106,7 @@ export function PlanPanel({
                   type="button"
                   aria-label={`${task.title} 삭제`}
                   data-testid="carry-delete"
-                  onClick={() => handleCarryDelete(task)}
+                  onClick={() => onCarryDelete(task.id)}
                   className="dump-delete shrink-0 px-1 text-[14px] leading-none"
                 >
                   ×
@@ -271,9 +120,9 @@ export function PlanPanel({
       <Top3Panel
         topTasks={topTasks}
         onDemote={handleToggleTop3}
-        onEstMin={handleEstMin}
-        onCategory={handleCategory}
-        onPlace={handlePlace}
+        onEstMin={onEstMin}
+        onCategory={onCategory}
+        onPlace={onPlace}
       />
 
       {swapTarget && (

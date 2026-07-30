@@ -10,7 +10,7 @@ import {
   GRID_END_MIN,
   GRID_START_MIN,
   SNAP_MIN,
-  ceilToSnap,
+  findNextFreeSlot,
   overlaps,
 } from '@/lib/grid'
 
@@ -245,22 +245,10 @@ export async function placeBlock(
     return { error: '배치에 실패했습니다. 다시 시도해 주세요.' }
   }
 
-  const existing = blocks ?? []
   // 오늘은 "지금 이후 다음 빈 슬롯", 다른 날짜(내일 계획·과거 보정)는 06:00부터 탐색
-  let start =
-    task.date === todayInSeoul()
-      ? Math.max(ceilToSnap(nowMinutesInSeoul()), GRID_START_MIN)
-      : GRID_START_MIN
-  let found: { start: number; end: number } | null = null
-  while (start + estMin <= GRID_END_MIN) {
-    const end = start + estMin
-    const candidateStart = start
-    if (!existing.some((b) => overlaps(candidateStart, end, b.start_min, b.end_min))) {
-      found = { start, end }
-      break
-    }
-    start += SNAP_MIN
-  }
+  const fromMin =
+    task.date === todayInSeoul() ? nowMinutesInSeoul() : GRID_START_MIN
+  const found = findNextFreeSlot(blocks ?? [], estMin, fromMin)
   if (found === null) {
     return { error: '그리드에 빈 자리가 없습니다.' }
   }
