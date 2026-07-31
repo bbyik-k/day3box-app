@@ -1,0 +1,78 @@
+/* ============================================================
+   day3box v0 — canonical component CSS
+   Extracted verbatim from the approved UI mockup
+   (reference/day3box-ui.dc.html).
+
+   Requires the Broadsheet token sheet to be loaded FIRST:
+     reference/broadsheet-styles.css  (var(--color-*), --space-*, --radius-*)
+
+   ALL geometry derives from ONE constant:
+     1 hour = 60px   →   1 min = 1px   →   10 min = 10px
+   Block top  = (startMinutes - 6*60) * 1px
+   Block height = durationMinutes * 1px - 1   (the -1 is the 1px bottom gutter)
+   ============================================================ */
+
+:root{
+  --u: 60px;                              /* 1 hour. v1 switches this to 90px. */
+  --top1: var(--color-accent);            /* TOP 3 slot 1 — cyan */
+  --top2: var(--color-accent-2);          /* TOP 3 slot 2 — magenta */
+  --top3: var(--color-process-yellow);    /* TOP 3 slot 3 — amber */
+}
+
+/* ---------- time axis ---------- */
+.hl{position:absolute;left:0;right:0;border-top:1px solid var(--color-divider)}
+.hl > span{position:absolute;left:0;top:-8px;font-size:11px;letter-spacing:.06em;background:var(--color-bg);padding-right:8px;color:color-mix(in srgb,var(--color-text) 55%,transparent)}
+
+/* ---------- block: the three-step hierarchy ----------
+   TOP 3    →  .blk + border-left-color: var(--top1|2|3)
+   normal   →  .blk                       (gray 4px bar)
+   fixed    →  .blk.fix                   (NO bar; faint outline + 3% tint)
+   The PRESENCE of the bar answers "is this a task?".
+   Block body stays EMPTY — v1 puts the photo there.                        */
+.blk{position:absolute;left:52px;right:8px;border-radius:var(--radius-sm);overflow:hidden;background:var(--color-surface);border:1px solid color-mix(in srgb,var(--color-text) 8%,transparent);border-left:4px solid var(--color-neutral-400)}
+.fix{border-left:1px solid color-mix(in srgb,var(--color-text) 10%,transparent);background:color-mix(in srgb,var(--color-text) 3%,transparent)}
+.fix .nm{font-weight:400;color:color-mix(in srgb,var(--color-text) 58%,transparent)}
+
+/* ---------- block content, three density tiers by height ----------
+   .p2  ≥ 45px  — two lines (title + meta)
+   .p1  25–44px — one line  (title + meta right-aligned)
+   .p0  10–24px — micro line, 11px/line-height 1                            */
+.p2{padding:7px 10px}
+.p2 > .hd{display:flex;align-items:baseline;gap:8px}
+.p2 .nm{font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.25;flex:1}
+.p2 > .mt{font-size:11px;margin-top:3px;color:color-mix(in srgb,var(--color-text) 50%,transparent)}
+.p1{display:flex;align-items:center;gap:8px;height:100%;padding:0 10px;white-space:nowrap}
+.p1 .nm{font-family:var(--font-heading);font-weight:600;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis}
+.p1 .mt{font-size:11px;color:color-mix(in srgb,var(--color-text) 45%,transparent)}
+.p0{display:flex;align-items:center;gap:8px;height:100%;padding:0 10px;white-space:nowrap;font-size:11px;line-height:1}
+.p0 .nm{font-family:var(--font-heading);font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis}
+.p0 .mt{color:color-mix(in srgb,var(--color-text) 45%,transparent)}
+
+/* ---------- status markers (11px, right edge of the block) ----------
+   NEVER a warning color, strike-through, or warning icon.                  */
+.mk{width:11px;height:11px;flex:none;box-sizing:border-box}
+.mk-plan{border:1px solid color-mix(in srgb,var(--color-text) 32%,transparent)}
+.mk-done{background:var(--color-text)}
+.mk-part{border:1px solid var(--color-text);background:linear-gradient(to right,var(--color-text) 0 50%,transparent 50% 100%)}
+.mk-move{border:1px solid color-mix(in srgb,var(--color-text) 32%,transparent);background:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 32%,transparent) 0 1px,transparent 1px 3px)}
+
+/* ---------- duration preset chips + ±10 stepper (TOP 3 card) ---------- */
+.chip{flex:1;min-height:36px;box-sizing:border-box;text-align:center;padding:10px 0;font-family:var(--font-body);font-size:13px;line-height:1;background:transparent;border:1px solid color-mix(in srgb,var(--color-text) 16%,transparent);border-radius:var(--radius-sm);color:color-mix(in srgb,var(--color-text) 62%,transparent);cursor:pointer}
+.chip:hover{border-color:var(--color-accent);color:var(--color-accent-700)}
+.chip:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+.chip-on{background:var(--color-text);border-color:var(--color-text);color:var(--color-bg);font-weight:600}
+.chip-on:hover{background:var(--color-text);color:var(--color-bg);border-color:var(--color-text)}
+.stp{flex:none;width:44px;min-height:36px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-size:13px;background:transparent;border:1px solid color-mix(in srgb,var(--color-text) 16%,transparent);border-radius:var(--radius-sm);color:color-mix(in srgb,var(--color-text) 62%,transparent);cursor:pointer}
+.stp:hover{border-color:var(--color-accent);color:var(--color-accent-700)}
+.stp:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+
+/* ---------- left column: brain dump + TOP 3 swap picker ---------- */
+.dump:hover{background:color-mix(in srgb,var(--color-text) 4%,transparent)}
+.add:hover{border-color:var(--color-accent);color:var(--color-accent)}
+.box{width:15px;height:15px;flex:none;border:1.5px solid var(--color-divider);border-radius:var(--radius-sm)}
+.pick{background:var(--color-surface);border:1px solid color-mix(in srgb,var(--color-text) 8%,transparent);border-radius:var(--radius-sm);padding:11px 13px;cursor:pointer}
+.pick:hover{border-color:var(--color-accent)}
+
+/* ---------- section headings ---------- */
+h6.sec{margin:0 0 var(--space-2)}
+.lead{font-size:13px;margin:0 0 var(--space-3);color:color-mix(in srgb,var(--color-text) 55%,transparent)}

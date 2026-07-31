@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/broadsheet-aa72233a-abd5-462e-8cc1-ed962f3db53f/styles.css">
+<script src="_ds/broadsheet-aa72233a-abd5-462e-8cc1-ed962f3db53f/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0;background:var(--color-bg)}
+.g{position:relative;background-image:repeating-linear-gradient(to bottom,color-mix(in srgb,var(--color-text) 13%,transparent) 0 1px,transparent 1px 90px)}
+.tick{position:absolute;inset:0;z-index:1;background-image:repeating-linear-gradient(to bottom,color-mix(in srgb,var(--color-text) 7%,transparent) 0 1px,transparent 1px 15px)}
+.rail{display:flex;flex-direction:column;font-size:11px;letter-spacing:.06em;color:color-mix(in srgb,var(--color-text) 45%,transparent)}
+.rail > span{height:90px;line-height:1;display:block;transform:translateY(-4px)}
+.b{position:absolute;left:0;right:0;overflow:hidden;border-radius:2px;background:var(--color-surface);border:1px solid color-mix(in srgb,var(--color-text) 9%,transparent);border-left:3px solid var(--color-neutral-400)}
+.b2{padding:7px 10px}
+.b2 > .n{font-size:13px;font-weight:600;line-height:1.25}
+.b2 > .m{font-size:11px;margin-top:2px;color:color-mix(in srgb,var(--color-text) 50%,transparent)}
+.b1{display:flex;align-items:center;gap:8px;height:100%;padding:0 10px;white-space:nowrap}
+.b1 > .n{font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis}
+.b1 > .m{font-size:11px;color:color-mix(in srgb,var(--color-text) 45%,transparent)}
+.b0{display:flex;align-items:center;gap:8px;height:100%;padding:0 10px;white-space:nowrap;font-size:11px;line-height:1}
+.b0 > .n{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis}
+.b0 > .m{color:color-mix(in srgb,var(--color-text) 45%,transparent)}
+.faint{background:transparent;border-left:1px solid color-mix(in srgb,var(--color-text) 9%,transparent);color:color-mix(in srgb,var(--color-text) 52%,transparent)}
+.faint .n{font-weight:400}
+.shot{position:absolute;top:0;bottom:0;right:0;width:33%;min-width:56px;overflow:hidden;background:color-mix(in srgb,var(--color-text) 7%,transparent)}
+.chip{flex:1;text-align:center;min-height:44px;box-sizing:border-box;padding:14px 0;font-family:var(--font-body);font-size:13px;line-height:1;background:transparent;border:1px solid color-mix(in srgb,var(--color-text) 16%,transparent);border-radius:2px;color:color-mix(in srgb,var(--color-text) 62%,transparent);cursor:pointer}
+.chip:hover{border-color:var(--color-accent);color:var(--color-accent-700)}
+.chip:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+.chip-on{background:var(--color-text);border-color:var(--color-text);color:var(--color-bg);font-weight:600}
+.chip-on:hover{background:var(--color-text);color:var(--color-bg);border-color:var(--color-text)}
+.stp{flex:none;display:flex;align-items:center;justify-content:center;width:44px;min-height:44px;box-sizing:border-box;padding:14px 0;font-family:var(--font-body);font-size:13px;line-height:1;background:transparent;border:1px solid color-mix(in srgb,var(--color-text) 16%,transparent);border-radius:2px;color:color-mix(in srgb,var(--color-text) 62%,transparent);cursor:pointer}
+.stp:hover{border-color:var(--color-accent);color:var(--color-accent-700)}
+.stp:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+.dcard{background:var(--color-surface);border:1px solid color-mix(in srgb,var(--color-text) 9%,transparent);border-left:3px solid var(--color-neutral-400);border-radius:2px;padding:12px 14px}
+.badge{display:inline-block;font-family:var(--font-heading);font-weight:600;font-size:12px;letter-spacing:.08em;background:var(--color-text);color:var(--color-bg);padding:2px 8px}
+.note{font-size:12px;color:color-mix(in srgb,var(--color-text) 45%,transparent)}
+h2.t{margin:0;font-size:30px}
+h3.o{margin:0;font-size:22px}
+</style>
+</helmet>
+
+<section style="padding:56px 64px 24px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px">
+    <span class="badge">TURN 7</span>
+    <h2 class="t">사진이 들어간 블록 · 이미지 내보내기 — 두 가지 안</h2>
+  </div>
+  <p style="margin:0 0 16px;font-size:14px;max-width:78ch;color:color-mix(in srgb,var(--color-text) 60%,transparent)">v2의 차별점(그 시간의 실시간 사진이 계획 텍스트와 함께 테트리스처럼 쌓이는 매트릭스)을 위해 눈금 단위를 다시 잡았다. <strong>10분 = 15px, 1시간 = 90px</strong> — 정시에만 눈금을 그으므로 촘촘해 보이지 않고, 최소 블록 30분이 45px가 되어 사진이 들어갈 높이가 나온다. 아래 두 안은 같은 하루(08–14시)를 <em>내보낸 이미지 프레임</em> 안에서 비교한다.</p>
+  <p style="margin:0 0 48px;font-size:13px;max-width:78ch;color:color-mix(in srgb,var(--color-text) 55%,transparent)">사진 자리는 드롭 가능한 슬롯이다 — 실제 사진을 끌어다 놓으면 그대로 채워진다.</p>
+
+  <div style="display:flex;gap:72px;align-items:flex-start;flex-wrap:wrap">
+
+    <div id="7a" style="width:460px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">7a</span>
+        <h3 class="o">우측 사진 스트립</h3>
+      </div>
+      <p style="margin:8px 0 4px;font-size:14px;max-width:46ch">근거 — 텍스트와 사진이 각자의 칼럼을 가지므로 30분(45px) 블록에서도 제목이 사진에 눌리지 않는다. 오른쪽 변이 사진의 띠가 되어 하루 전체가 필름 스트립처럼 읽힌다.</p>
+      <p style="margin:0 0 20px;font-size:13px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">사진 없는 블록은 회색 자리로 남아 격자가 유지된다</p>
+
+      <div style="background:var(--color-surface);border:1px solid color-mix(in srgb,var(--color-text) 12%,transparent);padding:22px 22px 16px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--color-text);padding-bottom:8px">
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:22px">9월 12일 금요일</div>
+          <div class="note" style="letter-spacing:.06em">day3box</div>
+        </div>
+        <div style="display:flex;gap:14px;padding:10px 0 16px;font-size:12px">
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:3px;height:12px;background:var(--color-accent)"></span>이력서 수정</span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:3px;height:12px;background:var(--color-accent-2)"></span>면접 스터디</span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:3px;height:12px;background:var(--color-process-yellow)"></span>포트폴리오</span>
+        </div>
+        <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+          <div class="rail"><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span></div>
+          <div class="g" style="height:540px">
+            <div class="b" style="top:0;height:134px;border-left-color:var(--color-accent)">
+              <div class="shot"><image-slot id="p7a-1" shape="rect" placeholder="08시 사진"></image-slot></div>
+              <div class="b2" style="margin-right:34%"><div class="n">이력서 수정</div><div class="m">08:00–09:30 · 90분 · 다 했음</div></div>
+            </div>
+            <div class="b faint" style="top:135px;height:44px"><div class="b1"><span class="n">팀 스탠드업</span><span class="m">09:30–10:00</span></div></div>
+            <div class="b" style="top:180px;height:89px;border-left-color:var(--color-accent-2)">
+              <div class="shot"><image-slot id="p7a-2" shape="rect" placeholder="10시 사진"></image-slot></div>
+              <div class="b2" style="margin-right:34%"><div class="n">면접 스터디</div><div class="m">10:00–11:00 · 60분쯤 했음</div></div>
+            </div>
+            <div class="b" style="top:270px;height:44px">
+              <div class="shot"><image-slot id="p7a-3" shape="rect" placeholder="11시"></image-slot></div>
+              <div class="b1" style="margin-right:34%"><span class="n">코드 리뷰</span><span class="m">30분</span></div>
+            </div>
+            <div class="b faint" style="top:360px;height:89px">
+              <div class="shot"><image-slot id="p7a-4" shape="rect" placeholder="점심 사진"></image-slot></div>
+              <div class="b1" style="margin-right:34%"><span class="n">점심</span><span class="m">12:00–13:00</span></div>
+            </div>
+            <div class="b" style="top:450px;height:89px;border-left-color:var(--color-process-yellow)">
+              <div class="shot"><image-slot id="p7a-5" shape="rect" placeholder="13시 사진"></image-slot></div>
+              <div class="b2" style="margin-right:34%"><div class="n">포트폴리오 리팩터</div><div class="m">13:00–14:00 · 다 했음</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="note" style="border-top:1px solid color-mix(in srgb,var(--color-text) 12%,transparent);margin-top:14px;padding-top:8px">오늘의 셋 중 둘 완료 · 사진 5장</div>
+      </div>
+    </div>
+
+    <div id="7b" style="width:460px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">7b</span>
+        <h3 class="o">사진이 배경, 하단 라벨 바</h3>
+      </div>
+      <p style="margin:8px 0 4px;font-size:14px;max-width:46ch">근거 — 블록 전체가 사진이 되므로 내보낸 이미지가 앨범처럼 강렬하다. 대신 라벨 바가 30분(45px) 블록의 절반을 덮어, 짧은 블록은 사진이 색 띠 수준으로만 남는다.</p>
+      <p style="margin:0 0 20px;font-size:13px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">사진은 신문 하프톤 처리로 통일</p>
+
+      <div style="background:var(--color-surface);border:1px solid color-mix(in srgb,var(--color-text) 12%,transparent);padding:22px 22px 16px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--color-text);padding-bottom:8px">
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:22px">9월 12일 금요일</div>
+          <div class="note" style="letter-spacing:.06em">day3box</div>
+        </div>
+        <div style="display:flex;gap:14px;padding:10px 0 16px;font-size:12px">
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:3px;height:12px;background:var(--color-accent)"></span>이력서 수정</span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:3px;height:12px;background:var(--color-accent-2)"></span>면접 스터디</span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:3px;height:12px;background:var(--color-process-yellow)"></span>포트폴리오</span>
+        </div>
+        <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+          <div class="rail"><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span></div>
+          <div class="g" style="height:540px">
+            <div class="b" style="top:0;height:134px;border-left-color:var(--color-accent)">
+              <div class="halftone" style="position:absolute;inset:0;background:color-mix(in srgb,var(--color-text) 7%,transparent)"><image-slot id="p7b-1" shape="rect" placeholder="08시 사진"></image-slot></div>
+              <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:baseline;gap:8px;padding:5px 10px;background:color-mix(in srgb,var(--color-bg) 88%,transparent)"><span style="font-size:13px;font-weight:600;flex:1">이력서 수정</span><span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">08:00–09:30 · 다 했음</span></div>
+            </div>
+            <div class="b faint" style="top:135px;height:44px"><div class="b1"><span class="n">팀 스탠드업</span><span class="m">09:30–10:00</span></div></div>
+            <div class="b" style="top:180px;height:89px;border-left-color:var(--color-accent-2)">
+              <div class="halftone" style="position:absolute;inset:0;background:color-mix(in srgb,var(--color-text) 7%,transparent)"><image-slot id="p7b-2" shape="rect" placeholder="10시 사진"></image-slot></div>
+              <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:baseline;gap:8px;padding:5px 10px;background:color-mix(in srgb,var(--color-bg) 88%,transparent)"><span style="font-size:13px;font-weight:600;flex:1">면접 스터디</span><span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">60분쯤 했음</span></div>
+            </div>
+            <div class="b" style="top:270px;height:44px">
+              <div class="halftone" style="position:absolute;inset:0;background:color-mix(in srgb,var(--color-text) 7%,transparent)"><image-slot id="p7b-3" shape="rect" placeholder="11시"></image-slot></div>
+              <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:4px 10px;background:color-mix(in srgb,var(--color-bg) 88%,transparent)"><span style="font-size:12px;font-weight:600;flex:1">코드 리뷰</span><span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">30분</span></div>
+            </div>
+            <div class="b faint" style="top:360px;height:89px">
+              <div class="halftone" style="position:absolute;inset:0;background:color-mix(in srgb,var(--color-text) 7%,transparent)"><image-slot id="p7b-4" shape="rect" placeholder="점심 사진"></image-slot></div>
+              <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:4px 10px;background:color-mix(in srgb,var(--color-bg) 82%,transparent)"><span style="font-size:12px;flex:1">점심</span><span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">12:00–13:00</span></div>
+            </div>
+            <div class="b" style="top:450px;height:89px;border-left-color:var(--color-process-yellow)">
+              <div class="halftone" style="position:absolute;inset:0;background:color-mix(in srgb,var(--color-text) 7%,transparent)"><image-slot id="p7b-5" shape="rect" placeholder="13시 사진"></image-slot></div>
+              <div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:baseline;gap:8px;padding:5px 10px;background:color-mix(in srgb,var(--color-bg) 88%,transparent)"><span style="font-size:13px;font-weight:600;flex:1">포트폴리오 리팩터</span><span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">다 했음</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="note" style="border-top:1px solid color-mix(in srgb,var(--color-text) 12%,transparent);margin-top:14px;padding-top:8px">오늘의 셋 중 둘 완료 · 사진 5장</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding:24px 64px 24px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px">
+    <span class="badge">TURN 6</span>
+    <h2 class="t">블록의 네 상태 — 두 가지 안</h2>
+  </div>
+  <p style="margin:0 0 48px;font-size:14px;max-width:74ch;color:color-mix(in srgb,var(--color-text) 60%,transparent)">계획됨 · 완료 · 부분 · 이월. 경고색·취소선·경고 아이콘 없이. 각 안 아래에 <em>다섯 중 넷이 이월된 무너진 날</em>을 함께 그려, 그 화면도 다시 열고 싶은지로 판단. 완료·부분 블록에는 사진 자리를 함께 표시.</p>
+
+  <div style="display:flex;gap:72px;align-items:flex-start;flex-wrap:wrap">
+
+    <div id="6a" style="width:440px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">6a</span>
+        <h3 class="o">잉크가 채워지는 정도</h3>
+      </div>
+      <p style="margin:8px 0 24px;font-size:14px;max-width:44ch">근거 — 네 상태를 잉크 농도라는 한 축에 올리면 우열이 아니라 진행 단계로 읽힌다. 이월은 아직 잉크가 얹히지 않은 칸, 즉 빈 종이일 뿐이다.</p>
+
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+        <div class="rail"><span>08</span><span>09</span><span>10</span><span>11</span></div>
+        <div class="g" style="height:360px">
+          <div class="b" style="top:0;height:89px;border-left-color:var(--color-accent)"><div class="b2"><div class="n">이력서 수정</div><div class="m">08:00–09:00 · 계획됨</div></div></div>
+          <div class="b" style="top:90px;height:89px;border-left-color:var(--color-accent);background:color-mix(in srgb,var(--color-text) 9%,transparent)">
+            <div class="shot"><image-slot id="p6a-1" shape="rect" placeholder="사진"></image-slot></div>
+            <div class="b2" style="margin-right:34%"><div class="n">면접 스터디</div><div class="m">09:00–10:00 · 다 했음</div></div>
+          </div>
+          <div class="b" style="top:180px;height:89px;border-left-color:var(--color-accent);background:linear-gradient(to bottom,color-mix(in srgb,var(--color-text) 9%,transparent) 0 60%,var(--color-surface) 60% 100%)">
+            <div class="shot"><image-slot id="p6a-2" shape="rect" placeholder="사진"></image-slot></div>
+            <div class="b2" style="margin-right:34%"><div class="n">포트폴리오 리팩터</div><div class="m">10:00–11:00 · 60분쯤 했음</div></div>
+          </div>
+          <div class="b" style="top:270px;height:89px;border-left-color:color-mix(in srgb,var(--color-accent) 35%,transparent);background:transparent"><div class="b2"><div class="n" style="color:color-mix(in srgb,var(--color-text) 62%,transparent)">블로그 초안</div><div class="m">11:00–12:00 · 내일 9/13로 옮김</div></div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:28px;font-size:11px;letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">무너진 날 · 다섯 중 넷 이월</div>
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px;margin-top:8px">
+        <div class="rail"><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span></div>
+        <div class="g" style="height:450px">
+          <div class="b" style="top:0;height:89px;border-left-color:var(--color-accent);background:color-mix(in srgb,var(--color-text) 9%,transparent)">
+            <div class="shot"><image-slot id="p6a-3" shape="rect" placeholder="사진"></image-slot></div>
+            <div class="b2" style="margin-right:34%"><div class="n">이력서 수정</div><div class="m">08:00–09:00 · 다 했음</div></div>
+          </div>
+          <div class="b" style="top:90px;height:89px;border-left-color:color-mix(in srgb,var(--color-accent) 35%,transparent);background:transparent"><div class="b2"><div class="n" style="color:color-mix(in srgb,var(--color-text) 62%,transparent)">면접 스터디</div><div class="m">내일 9/13로 옮김</div></div></div>
+          <div class="b" style="top:180px;height:89px;border-left-color:color-mix(in srgb,var(--color-accent) 35%,transparent);background:transparent"><div class="b2"><div class="n" style="color:color-mix(in srgb,var(--color-text) 62%,transparent)">포트폴리오 리팩터</div><div class="m">내일 9/13로 옮김</div></div></div>
+          <div class="b" style="top:270px;height:89px;border-left-color:color-mix(in srgb,var(--color-accent) 35%,transparent);background:transparent"><div class="b2"><div class="n" style="color:color-mix(in srgb,var(--color-text) 62%,transparent)">블로그 초안</div><div class="m">내일 9/13로 옮김</div></div></div>
+          <div class="b" style="top:360px;height:89px;border-left-color:color-mix(in srgb,var(--color-accent) 35%,transparent);background:transparent"><div class="b2"><div class="n" style="color:color-mix(in srgb,var(--color-text) 62%,transparent)">은행 업무</div><div class="m">내일 9/13로 옮김</div></div></div>
+        </div>
+      </div>
+      <p class="note" style="margin:12px 0 0">해낸 하나만 잉크와 사진으로 남고 나머지는 조용히 비어 있다 — 다만 내보낸 이미지가 거의 빈 종이가 된다.</p>
+    </div>
+
+    <div id="6b" style="width:440px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">6b</span>
+        <h3 class="o">본문은 그대로, 우측에 인쇄 표식</h3>
+      </div>
+      <p style="margin:8px 0 24px;font-size:14px;max-width:44ch">근거 — 상태를 작은 표식 하나로 격리하고 본문 무게는 네 상태 모두 같게 둔다. 이월은 옅어지는 게 아니라 <em>날짜가 붙는 것</em>이라, 무너진 날도 내보낸 이미지의 밀도가 유지된다.</p>
+
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+        <div class="rail"><span>08</span><span>09</span><span>10</span><span>11</span></div>
+        <div class="g" style="height:360px">
+          <div class="b" style="top:0;height:89px;border-left-color:var(--color-accent)"><div class="b2"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">이력서 수정</span><span style="width:9px;height:9px;flex:none;border:1px solid color-mix(in srgb,var(--color-text) 30%,transparent)"></span></div><div class="m">08:00–09:00 · 계획됨</div></div></div>
+          <div class="b" style="top:90px;height:89px;border-left-color:var(--color-accent)">
+            <div class="shot"><image-slot id="p6b-1" shape="rect" placeholder="사진"></image-slot></div>
+            <div class="b2" style="margin-right:34%"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">면접 스터디</span><span style="width:9px;height:9px;flex:none;background:var(--color-text)"></span></div><div class="m">09:00–10:00 · 다 했음</div></div>
+          </div>
+          <div class="b" style="top:180px;height:89px;border-left-color:var(--color-accent)">
+            <div class="shot"><image-slot id="p6b-2" shape="rect" placeholder="사진"></image-slot></div>
+            <div class="b2" style="margin-right:34%"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">포트폴리오 리팩터</span><span style="width:9px;height:9px;flex:none;border:1px solid var(--color-text);background:linear-gradient(to right,var(--color-text) 0 60%,transparent 60% 100%)"></span></div><div class="m">10:00–11:00 · 60분쯤 했음</div></div>
+          </div>
+          <div class="b" style="top:270px;height:89px;border-left-color:var(--color-accent)"><div class="b2"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">블로그 초안</span><span style="font-size:11px;flex:none;color:var(--color-accent-700)">→ 9/13</span></div><div class="m">11:00–12:00 · 내일로 옮김</div></div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:28px;font-size:11px;letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">무너진 날 · 다섯 중 넷 이월</div>
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px;margin-top:8px">
+        <div class="rail"><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span></div>
+        <div class="g" style="height:450px">
+          <div class="b" style="top:0;height:89px;border-left-color:var(--color-accent)">
+            <div class="shot"><image-slot id="p6b-3" shape="rect" placeholder="사진"></image-slot></div>
+            <div class="b2" style="margin-right:34%"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">이력서 수정</span><span style="width:9px;height:9px;flex:none;background:var(--color-text)"></span></div><div class="m">08:00–09:00 · 다 했음</div></div>
+          </div>
+          <div class="b" style="top:90px;height:89px;border-left-color:var(--color-accent)"><div class="b2"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">면접 스터디</span><span style="font-size:11px;flex:none;color:var(--color-accent-700)">→ 9/13</span></div><div class="m">내일로 옮김</div></div></div>
+          <div class="b" style="top:180px;height:89px;border-left-color:var(--color-accent)"><div class="b2"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">포트폴리오 리팩터</span><span style="font-size:11px;flex:none;color:var(--color-accent-700)">→ 9/13</span></div><div class="m">내일로 옮김</div></div></div>
+          <div class="b" style="top:270px;height:89px;border-left-color:var(--color-accent)"><div class="b2"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">블로그 초안</span><span style="font-size:11px;flex:none;color:var(--color-accent-700)">→ 9/13</span></div><div class="m">내일로 옮김</div></div></div>
+          <div class="b" style="top:360px;height:89px;border-left-color:var(--color-accent)"><div class="b2"><div style="display:flex;align-items:baseline;gap:8px"><span class="n" style="flex:1">은행 업무</span><span style="font-size:11px;flex:none;color:var(--color-accent-700)">→ 9/13</span></div><div class="m">내일로 옮김</div></div></div>
+        </div>
+      </div>
+      <p class="note" style="margin:12px 0 0">네 개의 "→ 9/13"이 내일의 계획처럼 읽힌다 — 완료와 이월의 대비는 6a보다 약하다.</p>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding:24px 64px 24px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px">
+    <span class="badge">TURN 5</span>
+    <h2 class="t">TOP 3 교체 — 두 가지 안</h2>
+  </div>
+  <p style="margin:0 0 48px;font-size:14px;max-width:74ch;color:color-mix(in srgb,var(--color-text) 60%,transparent)">셋이 이미 찬 상태에서 <em>은행 업무</em>를 올리려는 순간. 막는 화면이 아니라 무엇을 내릴지 고르는 화면 — "안 됨·초과·제한" 같은 말을 쓰지 않는다. 모든 표적은 44px 이상.</p>
+
+  <div style="display:flex;gap:72px;align-items:flex-start;flex-wrap:wrap">
+
+    <div id="5a" style="width:352px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">5a</span>
+        <h3 class="o">제자리에서 자리 내주기</h3>
+      </div>
+      <p style="margin:8px 0 24px;font-size:14px;max-width:40ch">근거 — 좌측 칼럼을 벗어나지 않으므로 셋을 고르던 흐름이 끊기지 않는다. 카드가 그대로 "고를 수 있는 것"으로 바뀌는 것이 전부다.</p>
+
+      <div style="border-left:3px solid var(--color-text);padding-left:12px;margin-bottom:14px">
+        <div style="font-size:11px;letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">올릴 것</div>
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:17px;margin-top:2px">은행 업무</div>
+        <div style="font-size:13px;margin-top:4px">어느 자리에 넣을까요? 내려간 하나는 쏟아내기로 돌아갑니다.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="dcard" style="border-left-color:var(--color-accent);cursor:pointer;min-height:44px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:var(--color-accent-700)">01 · 집중</span>
+            <span style="flex:1"></span>
+            <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">90분</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin-top:2px">이력서 수정</div>
+          <div class="note" style="margin-top:6px">이 자리 내주기</div>
+        </div>
+
+        <div class="dcard" style="border-left-color:var(--color-accent-2);background:color-mix(in srgb,var(--color-text) 4%,transparent);cursor:pointer">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:var(--color-accent-2)">02 · 준비</span>
+            <span style="flex:1"></span>
+            <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">70분</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin-top:2px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">면접 스터디</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+            <span style="font-size:12px;color:var(--color-accent-2)">↑ 은행 업무가 들어옴</span>
+            <span style="flex:1"></span>
+            <button type="button" class="stp" style="width:auto;padding:12px 12px;border-color:var(--color-text);color:var(--color-text)">이 자리로</button>
+          </div>
+        </div>
+
+        <div class="dcard" style="border-left-color:var(--color-process-yellow);cursor:pointer">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">03 · 작업</span>
+            <span style="flex:1"></span>
+            <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">90분</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin-top:2px">포트폴리오 리팩터</div>
+          <div class="note" style="margin-top:6px">이 자리 내주기</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-top:2px">
+          <button type="button" class="btn btn-primary">바꾸기</button>
+          <button type="button" class="btn btn-ghost">오늘은 셋 그대로</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="5b" style="width:560px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">5b</span>
+        <h3 class="o">교환 시트 · 하루 한 번의 결정</h3>
+      </div>
+      <p style="margin:8px 0 24px;font-size:14px;max-width:52ch">근거 — 셋이라는 제약이 제품의 전부이므로, 그 결정만 화면에 남기고 나머지를 덮는다. 왼쪽에 올릴 것, 오른쪽에 내릴 후보 — 저울처럼 읽힌다.</p>
+
+      <div class="dialog-backdrop" style="position:relative;inset:auto;border-radius:2px;padding:var(--space-6)">
+        <div class="dialog" style="width:100%">
+          <div class="dialog-title">오늘의 셋을 바꿉니다</div>
+          <div class="dialog-body">셋은 늘어나지 않습니다. 내려간 하나는 쏟아내기에 그대로 남습니다.</div>
+
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:start;margin-top:var(--space-2)">
+            <div style="border-left:3px solid var(--color-text);padding-left:12px">
+              <div style="font-size:11px;letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">올릴 것</div>
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:17px;margin-top:2px">은행 업무</div>
+              <div style="display:flex;gap:4px;margin-top:10px">
+                <button type="button" class="chip" style="font-size:12px">30</button>
+                <button type="button" class="chip chip-on" style="font-size:12px">60</button>
+                <button type="button" class="chip" style="font-size:12px">90</button>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:11px;letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:8px">내려갈 것 하나</div>
+              <div style="display:flex;flex-direction:column">
+                <label class="radio" style="display:flex;align-items:center;gap:10px;padding:12px 8px;border-bottom:1px solid color-mix(in srgb,var(--color-text) 9%,transparent);cursor:pointer">
+                  <input type="radio" name="demote-5b" checked="{{ off }}" onChange="{{ noop }}">
+                  <span class="dot"></span>
+                  <span style="width:3px;height:16px;background:var(--color-accent);flex:none"></span>
+                  <span style="flex:1">이력서 수정</span>
+                  <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">90분 · 08:00 배치됨</span>
+                </label>
+                <label class="radio" style="display:flex;align-items:center;gap:10px;padding:12px 8px;border-bottom:1px solid color-mix(in srgb,var(--color-text) 9%,transparent);cursor:pointer;background:color-mix(in srgb,var(--color-accent) 8%,transparent)">
+                  <input type="radio" name="demote-5b" checked="{{ on }}" onChange="{{ noop }}">
+                  <span class="dot" style="border-color:var(--color-accent);background:var(--color-accent);box-shadow:inset 0 0 0 4px var(--color-surface)"></span>
+                  <span style="width:3px;height:16px;background:var(--color-accent-2);flex:none"></span>
+                  <span style="flex:1;font-weight:600">면접 스터디</span>
+                  <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">70분 · 10:00 배치됨</span>
+                </label>
+                <label class="radio" style="display:flex;align-items:center;gap:10px;padding:12px 8px;border-bottom:1px solid color-mix(in srgb,var(--color-text) 9%,transparent);cursor:pointer">
+                  <input type="radio" name="demote-5b" checked="{{ off }}" onChange="{{ noop }}">
+                  <span class="dot"></span>
+                  <span style="width:3px;height:16px;background:var(--color-process-yellow);flex:none"></span>
+                  <span style="flex:1">포트폴리오 리팩터</span>
+                  <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">90분 · 미배치</span>
+                </label>
+              </div>
+              <p style="margin:12px 0 0;font-size:12px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">면접 스터디의 10:00 블록은 비워지고, 그 자리에 은행 업무를 놓을 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div class="dialog-actions">
+            <button type="button" class="btn btn-ghost">그대로 두기</button>
+            <button type="button" class="btn btn-primary">면접 스터디 내리고 올리기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding:24px 64px 24px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px">
+    <span class="badge">TURN 4</span>
+    <h2 class="t">드래그로 블록 생성 — 두 가지 안</h2>
+  </div>
+  <p style="margin:0 0 48px;font-size:14px;max-width:74ch;color:color-mix(in srgb,var(--color-text) 60%,transparent)">빈 곳을 눌러 아래로 끄는 중. 10분 스냅 눈금(15px)은 드래그 중에만 나타난다. 각 안을 <em>50분 진행 중</em>과 <em>최소 단위 20분</em> 두 상태로 그림. 09–14시 확대.</p>
+
+  <div style="display:flex;gap:72px;align-items:flex-start;flex-wrap:wrap">
+
+    <div id="4a" style="width:440px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">4a</span>
+        <h3 class="o">고스트 블록 안에 시각 · 소요시간</h3>
+      </div>
+      <p style="margin:8px 0 24px;font-size:14px;max-width:44ch">근거 — 정보가 만들어지는 사각형 안에 있으니 시선이 커서를 따라 움직이지 않는다. 20분 이하에서는 한 줄로 접힌다.</p>
+
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+        <div class="rail"><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span></div>
+        <div class="g" style="height:450px">
+          <div class="tick"></div>
+          <div class="b faint" style="top:0;height:44px;z-index:2"><div class="b1"><span class="n">팀 스탠드업</span><span class="m">09:00–09:30</span></div></div>
+          <div class="b" style="top:90px;height:89px;border-left-color:var(--color-accent-2);z-index:2"><div class="b2"><div class="n">면접 스터디</div><div class="m">10:00–11:00 · 60분 · TOP 2</div></div></div>
+          <div class="b faint" style="top:270px;height:89px;z-index:2"><div class="b1"><span class="n">점심</span><span class="m">12:00–13:00</span></div></div>
+
+          <div style="position:absolute;left:0;right:0;top:180px;height:74px;z-index:4;border:1px dashed var(--color-accent);border-radius:2px;background:color-mix(in srgb,var(--color-accent) 9%,transparent)">
+            <div style="display:flex;align-items:baseline;gap:8px;padding:6px 10px">
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1;color:var(--color-accent-700)">50분</span>
+              <span style="flex:1"></span>
+              <span style="font-size:11px;color:var(--color-accent-700)">11:00–11:50</span>
+            </div>
+            <div style="position:absolute;left:0;right:0;bottom:-1px;border-bottom:2px solid var(--color-accent)"></div>
+          </div>
+
+          <div style="position:absolute;left:0;right:0;top:420px;height:29px;z-index:4;border:1px dashed var(--color-accent);border-radius:2px;background:color-mix(in srgb,var(--color-accent) 9%,transparent)">
+            <div style="display:flex;align-items:center;gap:8px;height:100%;padding:0 10px;font-size:11px;line-height:1;color:var(--color-accent-700);white-space:nowrap">
+              <span style="font-weight:600">20분</span><span style="flex:1"></span><span>13:40–14:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note" style="margin:12px 0 0">놓으면 이름 입력으로 이어짐 · 겹치는 위치에서는 윤곽이 크림슨</p>
+    </div>
+
+    <div id="4b" style="width:440px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">4b</span>
+        <h3 class="o">시각은 시간축에, 소요시간만 블록에</h3>
+      </div>
+      <p style="margin:8px 0 24px;font-size:14px;max-width:44ch">근거 — 시각을 축 쪽 가장자리에 붙이면 범위가 아무리 짧아도 두 시각과 소요시간이 겹치지 않고, 축의 정시 라벨과 직접 비교된다.</p>
+
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+        <div class="rail"><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span></div>
+        <div class="g" style="height:450px">
+          <div class="tick"></div>
+          <div class="b faint" style="top:0;height:44px;z-index:2"><div class="b1"><span class="n">팀 스탠드업</span><span class="m">09:00–09:30</span></div></div>
+          <div class="b" style="top:90px;height:89px;border-left-color:var(--color-accent-2);z-index:2"><div class="b2"><div class="n">면접 스터디</div><div class="m">10:00–11:00 · 60분 · TOP 2</div></div></div>
+          <div class="b faint" style="top:270px;height:89px;z-index:2"><div class="b1"><span class="n">점심</span><span class="m">12:00–13:00</span></div></div>
+
+          <div style="position:absolute;left:0;right:0;top:180px;height:74px;z-index:4;border:1px dashed var(--color-accent);border-radius:2px;background:color-mix(in srgb,var(--color-accent) 9%,transparent)">
+            <span style="position:absolute;left:-42px;top:-6px;font-size:10px;letter-spacing:.04em;background:var(--color-accent);color:var(--color-bg);padding:1px 5px">11:00</span>
+            <span style="position:absolute;left:-42px;bottom:-6px;font-size:10px;letter-spacing:.04em;background:var(--color-accent);color:var(--color-bg);padding:1px 5px">11:50</span>
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:var(--font-heading);font-weight:600;font-size:15px;color:var(--color-accent-700)">50분</div>
+            <div style="position:absolute;left:0;right:0;bottom:-1px;border-bottom:2px solid var(--color-accent)"></div>
+          </div>
+
+          <div style="position:absolute;left:0;right:0;top:420px;height:29px;z-index:4;border:1px dashed var(--color-accent);border-radius:2px;background:color-mix(in srgb,var(--color-accent) 9%,transparent)">
+            <span style="position:absolute;left:-42px;top:-6px;font-size:10px;letter-spacing:.04em;background:var(--color-accent);color:var(--color-bg);padding:1px 5px">13:40</span>
+            <span style="position:absolute;left:-42px;bottom:-6px;font-size:10px;letter-spacing:.04em;background:var(--color-accent);color:var(--color-bg);padding:1px 5px">14:00</span>
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;font-weight:600;line-height:1;color:var(--color-accent-700)">20분</div>
+          </div>
+        </div>
+      </div>
+      <p class="note" style="margin:12px 0 0">드래그 중에는 정시 라벨이 두 칩에 잠시 가려짐</p>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding:24px 64px 24px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px">
+    <span class="badge">TURN 3</span>
+    <h2 class="t">분할된 블록 — 두 가지 안</h2>
+  </div>
+  <p style="margin:0 0 48px;font-size:14px;max-width:74ch;color:color-mix(in srgb,var(--color-text) 60%,transparent)">같은 상황: <em>이력서 수정 180분</em>이 12:00 점심(고정)으로 끊겨 60분 + 120분으로 나뉜다. 10–16시 확대. 같은 제목·같은 색은 유지하고, "하나의 일"을 알리는 표현만 다르다.</p>
+
+  <div style="display:flex;gap:72px;align-items:flex-start;flex-wrap:wrap">
+
+    <div id="3a" style="width:440px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">3a</span>
+        <h3 class="o">1/2 · 2/2 표기 + 끊긴 가장자리</h3>
+      </div>
+      <p style="margin:8px 0 4px;font-size:14px;max-width:44ch">근거 — 인쇄물의 "(계속)" 문법. 잘린 변의 테두리를 지우고 이어지는 쪽에 ↳를 두면, 블록 하나만 봐도 나머지가 어디 있는지 읽힌다.</p>
+      <p style="margin:0 0 24px;font-size:13px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">조각이 셋 이상으로 늘어나도 표기가 그대로 확장된다</p>
+
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+        <div class="rail"><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span></div>
+        <div class="g" style="height:540px">
+          <div class="b faint" style="top:0;height:44px"><div class="b1"><span class="n">팀 회의</span><span class="m">10:00–10:30</span></div></div>
+          <div class="b" style="top:45px;height:44px"><div class="b1"><span class="n">코드 리뷰</span><span class="m">30분</span></div></div>
+
+          <div class="b" style="top:90px;height:89px;border-left-color:var(--color-accent);border-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0">
+            <div class="b2"><div class="n">이력서 수정 <span style="font-weight:400;font-size:11px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">1/2</span></div><div class="m">11:00–12:00 · 60분 · 180분 중</div></div>
+          </div>
+
+          <div class="b faint" style="top:180px;height:89px"><div class="b1"><span class="n">점심</span><span class="m">12:00–13:00</span></div></div>
+
+          <div class="b" style="top:270px;height:179px;border-left-color:var(--color-accent);border-top:1px dashed color-mix(in srgb,var(--color-accent) 55%,transparent);border-top-left-radius:0;border-top-right-radius:0">
+            <div class="b2"><div class="n"><span style="color:var(--color-accent-700)">↳</span> 이력서 수정 <span style="font-weight:400;font-size:11px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">2/2</span></div><div class="m">13:00–15:00 · 남은 120분</div></div>
+          </div>
+
+          <div class="b faint" style="top:450px;height:29px"><div class="b0"><span class="n">커피 · 데스크 정리</span><span class="m">20분</span></div></div>
+          <div class="b" style="top:480px;height:59px"><div class="b1"><span class="n">은행 업무</span><span class="m">15:20–16:00</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="3b" style="width:440px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">3b</span>
+        <h3 class="o">색 막대가 관통해 이어짐</h3>
+      </div>
+      <p style="margin:8px 0 4px;font-size:14px;max-width:44ch">근거 — 이 제품에서 색 막대는 곧 "오늘의 핵심"이라는 실이다. 점심 구간까지 끊지 않고 그으면 설명 없이 하나의 일로 보인다.</p>
+      <p style="margin:0 0 24px;font-size:13px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">두 번째 블록 제목은 "(이어서)"로만 표시</p>
+
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+        <div class="rail"><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span></div>
+        <div class="g" style="height:540px">
+          <div class="b faint" style="top:0;height:44px"><div class="b1"><span class="n">팀 회의</span><span class="m">10:00–10:30</span></div></div>
+          <div class="b" style="top:45px;height:44px"><div class="b1"><span class="n">코드 리뷰</span><span class="m">30분</span></div></div>
+
+          <div style="position:absolute;left:0;width:3px;top:90px;height:359px;background:var(--color-accent);z-index:3"></div>
+
+          <div class="b" style="top:90px;height:89px;border-left-color:var(--color-accent)">
+            <div class="b2"><div class="n">이력서 수정</div><div class="m">11:00–12:00 · 60분 / 총 180분</div></div>
+          </div>
+
+          <div class="b faint" style="top:180px;height:89px;left:3px"><div class="b1"><span class="n">점심</span><span class="m">12:00–13:00</span></div></div>
+
+          <div class="b" style="top:270px;height:179px;border-left-color:var(--color-accent)">
+            <div class="b2"><div class="n">이력서 수정 <span style="font-weight:400;font-size:11px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">(이어서)</span></div><div class="m">13:00–15:00 · 남은 120분</div></div>
+          </div>
+
+          <div class="b faint" style="top:450px;height:29px"><div class="b0"><span class="n">커피 · 데스크 정리</span><span class="m">20분</span></div></div>
+          <div class="b" style="top:480px;height:59px"><div class="b1"><span class="n">은행 업무</span><span class="m">15:20–16:00</span></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding:24px 64px 24px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px">
+    <span class="badge">TURN 2</span>
+    <h2 class="t">소요시간 입력 — 두 가지 안</h2>
+  </div>
+  <p style="margin:0 0 48px;font-size:14px;max-width:74ch;color:color-mix(in srgb,var(--color-text) 60%,transparent)">소요시간은 계측이 아니라 어림 판단이다. 프리셋 칩 30 / 60 / 90 / 120 / 180이 주, ±10분 스테퍼가 보조(그리드 최소 단위와 같다). 자유 입력 없음. 칩·스테퍼는 모바일을 위해 44px 높이. 좌측 칼럼 실폭(352px)에서 확인.</p>
+
+  <div style="display:flex;gap:72px;align-items:flex-start;flex-wrap:wrap">
+
+    <div id="2a" style="width:352px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">2a</span>
+        <h3 class="o">한 줄 칩 + 아래 ±</h3>
+      </div>
+      <p style="margin:8px 0 24px;font-size:14px;max-width:40ch">근거 — 다섯 칩이 한 줄에 서면 30에서 180까지가 하나의 눈금으로 읽혀, 고르는 행위 자체가 "이 중 어디쯤"이라는 어림이 된다.</p>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="dcard" style="border-left-color:var(--color-accent)">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:var(--color-accent-700)">01 · 집중</span>
+            <span style="flex:1"></span>
+            <span style="font-family:var(--font-heading);font-weight:600;font-size:17px;line-height:1">90</span><span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">분</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin:2px 0 12px">이력서 수정</div>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="chip">30</button>
+            <button type="button" class="chip">60</button>
+            <button type="button" class="chip chip-on">90</button>
+            <button type="button" class="chip">120</button>
+            <button type="button" class="chip">180</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+            <span style="flex:1;font-size:11px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">어림 조정</span>
+            <button type="button" class="stp">−10</button>
+            <button type="button" class="stp">+10</button>
+          </div>
+        </div>
+
+        <div class="dcard" style="border-left-color:var(--color-accent-2)">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:var(--color-accent-2)">02 · 준비</span>
+            <span style="flex:1"></span>
+            <span style="font-family:var(--font-heading);font-weight:600;font-size:17px;line-height:1">70</span><span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">분</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin:2px 0 12px">면접 스터디</div>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="chip">30</button>
+            <button type="button" class="chip" style="border-color:var(--color-text);color:var(--color-text)">60</button>
+            <button type="button" class="chip">90</button>
+            <button type="button" class="chip">120</button>
+            <button type="button" class="chip">180</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+            <span style="flex:1;font-size:11px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">60에서 +10</span>
+            <button type="button" class="stp">−10</button>
+            <button type="button" class="stp">+10</button>
+          </div>
+        </div>
+
+        <div class="dcard">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">03 · 작업</span>
+            <span style="flex:1"></span>
+            <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">시간 미정</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin:2px 0 12px">포트폴리오 리팩터</div>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="chip">30</button>
+            <button type="button" class="chip">60</button>
+            <button type="button" class="chip">90</button>
+            <button type="button" class="chip">120</button>
+            <button type="button" class="chip">180</button>
+          </div>
+          <div class="note" style="margin-top:8px">시간을 정하면 그리드에 놓을 수 있다</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="2b" style="width:352px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">2b</span>
+        <h3 class="o">두 행 · 짧은 것 / 긴 것</h3>
+      </div>
+      <p style="margin:8px 0 24px;font-size:14px;max-width:40ch">근거 — 30·60·90(일상 단위)과 120·180(긴 몰입)은 성격이 다른 선택이다. 두 행으로 나누면 칩이 커지고 ±10이 긴 칩 옆에 자연히 놓인다.</p>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="dcard" style="border-left-color:var(--color-accent)">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:var(--color-accent-700)">01 · 집중</span>
+            <span style="flex:1"></span>
+            <span style="font-family:var(--font-heading);font-weight:600;font-size:17px;line-height:1">90</span><span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">분</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin:2px 0 12px">이력서 수정</div>
+          <div style="display:flex;gap:5px;margin-bottom:5px">
+            <button type="button" class="chip" style="font-size:14px">30</button>
+            <button type="button" class="chip" style="font-size:14px">60</button>
+            <button type="button" class="chip chip-on" style="font-size:14px">90</button>
+          </div>
+          <div style="display:flex;gap:5px">
+            <button type="button" class="chip" style="font-size:14px">120</button>
+            <button type="button" class="chip" style="font-size:14px">180</button>
+            <button type="button" class="stp">−10</button>
+            <button type="button" class="stp">+10</button>
+          </div>
+        </div>
+
+        <div class="dcard" style="border-left-color:var(--color-accent-2)">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:var(--color-accent-2)">02 · 준비</span>
+            <span style="flex:1"></span>
+            <span style="font-family:var(--font-heading);font-weight:600;font-size:17px;line-height:1">70</span><span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">분 · 60에서 +10</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin:2px 0 12px">면접 스터디</div>
+          <div style="display:flex;gap:5px;margin-bottom:5px">
+            <button type="button" class="chip" style="font-size:14px">30</button>
+            <button type="button" class="chip" style="font-size:14px;border-color:var(--color-text);color:var(--color-text)">60</button>
+            <button type="button" class="chip" style="font-size:14px">90</button>
+          </div>
+          <div style="display:flex;gap:5px">
+            <button type="button" class="chip" style="font-size:14px">120</button>
+            <button type="button" class="chip" style="font-size:14px">180</button>
+            <button type="button" class="stp">−10</button>
+            <button type="button" class="stp" style="border-color:var(--color-text);color:var(--color-text)">+10</button>
+          </div>
+        </div>
+
+        <div class="dcard">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:11px;letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">03 · 작업</span>
+            <span style="flex:1"></span>
+            <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">시간 미정</span>
+          </div>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:16px;margin:2px 0 12px">포트폴리오 리팩터</div>
+          <div style="display:flex;gap:5px;margin-bottom:5px">
+            <button type="button" class="chip" style="font-size:14px">30</button>
+            <button type="button" class="chip" style="font-size:14px">60</button>
+            <button type="button" class="chip" style="font-size:14px">90</button>
+          </div>
+          <div style="display:flex;gap:5px">
+            <button type="button" class="chip" style="font-size:14px">120</button>
+            <button type="button" class="chip" style="font-size:14px">180</button>
+            <button type="button" class="stp" style="opacity:.45">−10</button>
+            <button type="button" class="stp" style="opacity:.45">+10</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding:24px 64px 96px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:8px">
+    <span class="badge">TURN 1</span>
+    <h2 class="t">고정 시간 블록 — 두 가지 안</h2>
+  </div>
+  <p style="margin:0 0 48px;font-size:14px;max-width:74ch;color:color-mix(in srgb,var(--color-text) 60%,transparent)">식사·이동·휴식·약속은 <em>할 일이 아니라 확보된 시간</em>이다. brain dump에는 없고 그리드에만 존재한다. 두 안 모두 24개 블록으로 꽉 찬 하루(06–24시), 10분 단위 정렬 상태.</p>
+
+  <div style="display:flex;gap:72px;align-items:flex-start;flex-wrap:wrap">
+
+    <div id="1a" style="width:520px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">1a</span>
+        <h3 class="o">옅은 대각선 빗금</h3>
+      </div>
+      <p style="margin:8px 0 4px;font-size:14px;max-width:46ch">근거 — 빗금은 "이 시간은 이미 임자가 있다"는 도면의 관습이라, 블록이 붙어 있어도 텍스처만으로 일/비일이 갈린다.</p>
+      <p style="margin:0 0 24px;font-size:13px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">위계: 컬러 막대(TOP 3) → 회색 막대(일반) → 회색 막대 + 빗금(고정)</p>
+
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+        <div class="rail"><span>06</span><span>07</span><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span></div>
+        <div class="g" style="height:1620px">
+          <div class="b" style="top:0;height:44px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">기상 · 스트레칭</span><span class="m">06:00–06:30</span></div></div>
+          <div class="b" style="top:45px;height:44px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">아침 식사</span><span class="m">06:30–07:00</span></div></div>
+          <div class="b" style="top:90px;height:59px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">출근 이동</span><span class="m">07:00–07:40</span></div></div>
+          <div class="b" style="top:150px;height:29px"><div class="b0"><span class="n">이메일 · 슬랙 정리</span><span class="m">20분</span></div></div>
+          <div class="b" style="top:180px;height:134px;border-left-color:var(--color-accent)"><div class="b2"><div class="n">이력서 수정</div><div class="m">08:00–09:30 · 90분 · TOP 1</div></div></div>
+          <div class="b" style="top:315px;height:44px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">팀 스탠드업</span><span class="m">09:30–10:00</span></div></div>
+          <div class="b" style="top:360px;height:89px;border-left-color:var(--color-accent-2)"><div class="b2"><div class="n">면접 스터디</div><div class="m">10:00–11:00 · 60분 · TOP 2</div></div></div>
+          <div class="b" style="top:450px;height:44px"><div class="b1"><span class="n">채용 공고 리서치</span><span class="m">30분</span></div></div>
+          <div class="b" style="top:495px;height:44px"><div class="b1"><span class="n">코드 리뷰</span><span class="m">30분</span></div></div>
+          <div class="b" style="top:540px;height:89px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">점심</span><span class="m">12:00–13:00</span></div></div>
+          <div class="b" style="top:630px;height:29px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b0"><span class="n">산책</span><span class="m">20분</span></div></div>
+          <div class="b" style="top:675px;height:134px;border-left-color:var(--color-process-yellow)"><div class="b2"><div class="n">포트폴리오 리팩터</div><div class="m">13:30–15:00 · 90분 · TOP 3</div></div></div>
+          <div class="b" style="top:810px;height:29px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b0"><span class="n">커피 · 데스크 정리</span><span class="m">20분</span></div></div>
+          <div class="b" style="top:840px;height:59px"><div class="b1"><span class="n">은행 업무</span><span class="m">15:20–16:00</span></div></div>
+          <div class="b" style="top:900px;height:89px"><div class="b2"><div class="n">블로그 초안</div><div class="m">16:00–17:00 · 60분</div></div></div>
+          <div class="b" style="top:990px;height:44px"><div class="b1"><span class="n">장보기</span><span class="m">30분</span></div></div>
+          <div class="b" style="top:1035px;height:59px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">퇴근 이동</span><span class="m">17:30–18:10</span></div></div>
+          <div class="b" style="top:1095px;height:74px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">저녁 식사</span><span class="m">18:10–19:00</span></div></div>
+          <div class="b" style="top:1170px;height:89px"><div class="b2"><div class="n">운동</div><div class="m">19:00–20:00 · 60분</div></div></div>
+          <div class="b" style="top:1260px;height:89px"><div class="b2"><div class="n">영어 스터디</div><div class="m">20:00–21:00 · 60분</div></div></div>
+          <div class="b" style="top:1350px;height:44px"><div class="b1"><span class="n">독서</span><span class="m">30분</span></div></div>
+          <div class="b" style="top:1395px;height:44px"><div class="b1"><span class="n">내일 계획</span><span class="m">30분</span></div></div>
+          <div class="b" style="top:1440px;height:89px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">가족 통화</span><span class="m">22:00–23:00</span></div></div>
+          <div class="b" style="top:1530px;height:44px;background-color:var(--color-bg);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--color-text) 9%,transparent) 0 1px,transparent 1px 6px)"><div class="b1"><span class="n">정리 · 취침 준비</span><span class="m">23:00–23:30</span></div></div>
+
+          <sc-if value="{{ showNow }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;left:-38px;right:0;top:765px;border-top:1px solid var(--color-accent-2);z-index:5"><span style="position:absolute;right:0;top:-9px;font-size:10px;letter-spacing:.04em;background:var(--color-accent-2);color:var(--color-bg);padding:1px 6px">14:30</span></div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="width:520px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span class="badge">1b</span>
+        <h3 class="o">막대 없음 · 본문만 옅게 <span style="font-size:12px;letter-spacing:.06em;background:var(--color-accent);color:var(--color-bg);padding:2px 8px;vertical-align:middle">확정</span></h3>
+      </div>
+      <p style="margin:8px 0 4px;font-size:14px;max-width:46ch">근거 — 색의 규칙을 한 단계 더 밀어붙인 안. 막대의 유무가 곧 "일인가"의 답이 되어, 꽉 찬 하루에서도 컬러 막대 세 개가 그대로 눈에 남는다.</p>
+      <p style="margin:0 0 24px;font-size:13px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">위계: 컬러 막대(TOP 3) → 회색 막대(일반) → 막대 없음 · 배경 없음(고정)</p>
+
+      <div style="display:grid;grid-template-columns:38px 1fr;gap:10px">
+        <div class="rail"><span>06</span><span>07</span><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span></div>
+        <div class="g" style="height:1620px">
+          <div class="b faint" style="top:0;height:44px"><div class="b1"><span class="n">기상 · 스트레칭</span><span class="m">06:00–06:30</span></div></div>
+          <div class="b faint" style="top:45px;height:44px"><div class="b1"><span class="n">아침 식사</span><span class="m">06:30–07:00</span></div></div>
+          <div class="b faint" style="top:90px;height:59px"><div class="b1"><span class="n">출근 이동</span><span class="m">07:00–07:40</span></div></div>
+          <div class="b" style="top:150px;height:29px"><div class="b0"><span class="n">이메일 · 슬랙 정리</span><span class="m">20분</span></div></div>
+          <div class="b" style="top:180px;height:134px;border-left-color:var(--color-accent)"><div class="b2"><div class="n">이력서 수정</div><div class="m">08:00–09:30 · 90분 · TOP 1</div></div></div>
+          <div class="b faint" style="top:315px;height:44px"><div class="b1"><span class="n">팀 스탠드업</span><span class="m">09:30–10:00</span></div></div>
+          <div class="b" style="top:360px;height:89px;border-left-color:var(--color-accent-2)"><div class="b2"><div class="n">면접 스터디</div><div class="m">10:00–11:00 · 60분 · TOP 2</div></div></div>
+          <div class="b" style="top:450px;height:44px"><div class="b1"><span class="n">채용 공고 리서치</span><span class="m">30분</span></div></div>
+          <div class="b" style="top:495px;height:44px"><div class="b1"><span class="n">코드 리뷰</span><span class="m">30분</span></div></div>
+          <div class="b faint" style="top:540px;height:89px"><div class="b1"><span class="n">점심</span><span class="m">12:00–13:00</span></div></div>
+          <div class="b faint" style="top:630px;height:29px"><div class="b0"><span class="n">산책</span><span class="m">20분</span></div></div>
+          <div class="b" style="top:675px;height:134px;border-left-color:var(--color-process-yellow)"><div class="b2"><div class="n">포트폴리오 리팩터</div><div class="m">13:30–15:00 · 90분 · TOP 3</div></div></div>
+          <div class="b faint" style="top:810px;height:29px"><div class="b0"><span class="n">커피 · 데스크 정리</span><span class="m">20분</span></div></div>
+          <div class="b" style="top:840px;height:59px"><div class="b1"><span class="n">은행 업무</span><span class="m">15:20–16:00</span></div></div>
+          <div class="b" style="top:900px;height:89px"><div class="b2"><div class="n">블로그 초안</div><div class="m">16:00–17:00 · 60분</div></div></div>
+          <div class="b" style="top:990px;height:44px"><div class="b1"><span class="n">장보기</span><span class="m">30분</span></div></div>
+          <div class="b faint" style="top:1035px;height:59px"><div class="b1"><span class="n">퇴근 이동</span><span class="m">17:30–18:10</span></div></div>
+          <div class="b faint" style="top:1095px;height:74px"><div class="b1"><span class="n">저녁 식사</span><span class="m">18:10–19:00</span></div></div>
+          <div class="b" style="top:1170px;height:89px"><div class="b2"><div class="n">운동</div><div class="m">19:00–20:00 · 60분</div></div></div>
+          <div class="b" style="top:1260px;height:89px"><div class="b2"><div class="n">영어 스터디</div><div class="m">20:00–21:00 · 60분</div></div></div>
+          <div class="b" style="top:1350px;height:44px"><div class="b1"><span class="n">독서</span><span class="m">30분</span></div></div>
+          <div class="b" style="top:1395px;height:44px"><div class="b1"><span class="n">내일 계획</span><span class="m">30분</span></div></div>
+          <div class="b faint" style="top:1440px;height:89px"><div class="b1"><span class="n">가족 통화</span><span class="m">22:00–23:00</span></div></div>
+          <div class="b faint" style="top:1530px;height:44px"><div class="b1"><span class="n">정리 · 취침 준비</span><span class="m">23:00–23:30</span></div></div>
+
+          <sc-if value="{{ showNow }}">
+          <div style="position:absolute;left:-38px;right:0;top:765px;border-top:1px solid var(--color-accent-2);z-index:5"><span style="position:absolute;right:0;top:-9px;font-size:10px;letter-spacing:.04em;background:var(--color-accent-2);color:var(--color-bg);padding:1px 6px">14:30</span></div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showNow&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { showNow: this.props.showNow ?? true, on: true, off: false, noop: () => {} };
+  }
+}
+
+</script>
+</body>
+</html>
