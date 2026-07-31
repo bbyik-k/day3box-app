@@ -98,12 +98,16 @@ export async function toggleTop3(
   if (next) {
     const { data: task, error: taskError } = await supabase
       .from('tasks')
-      .select('id, date, category')
+      .select('id, date, category, kind')
       .eq('id', id)
       .eq('user_id', user.id)
       .single()
     if (taskError || !task) {
       return { error: '항목을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.' }
+    }
+    // 고정 시간은 할 일이 아니다 — TOP3 승격 불가 (UI상 경로 없음, 서버 백스톱)
+    if (task.kind === 'fixed') {
+      return { error: '고정 시간은 TOP 3에 올릴 수 없습니다.' }
     }
     const { data: currentTop3 } = await supabase
       .from('tasks')
@@ -291,6 +295,7 @@ export async function placeBlock(
 
 // 배치 취소 — 블록만 삭제, task는 brain dump에 유지 (F4의 역연산).
 // 삭제로 block 0개가 된 task는 carryTaskToDate의 검증을 통과해 익일 이월 대상이 된다.
+// 단, 고정 시간(kind='fixed')은 좌측에 없어 마지막 블록 삭제 시 task도 함께 지운다 (유령 행 방지)
 export async function deleteBlock(
   id: string,
 ): Promise<{ error: string } | undefined> {
@@ -302,6 +307,13 @@ export async function deleteBlock(
     redirect('/login')
   }
 
+  const { data: block } = await supabase
+    .from('blocks')
+    .select('task_id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
+
   const { error } = await supabase
     .from('blocks')
     .delete()
@@ -309,6 +321,96 @@ export async function deleteBlock(
     .eq('user_id', user.id)
   if (error) {
     return { error: '배치 취소에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  if (block) {
+    const { count } = await supabase
+      .from('blocks')
+      .select('id', { count: 'exact', head: true })
+      .eq('task_id', block.task_id)
+      .eq('user_id', user.id)
+    if ((count ?? 0) === 0) {
+      await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', block.task_id)
+        .eq('user_id', user.id)
+        .eq('kind', 'fixed')
+    }
+  }
+
+  refresh()
+}
+
+// 고정 시간 생성 (D1 드래그 생성): 그리드 빈 영역 드래그 → kind='fixed' task + block.
+// 좌측에 나타나지 않고 그리드에만 존재한다 — "할 일"이 아니라 "확보한 시간"
+export async function createFixedBlock(
+  title: string,
+  date: string,
+  startMin: number,
+  endMin: number,
+): Promise<{ error: string } | undefined> {
+  const trimmed = title.trim()
+  if (trimmed === '') {
+    return { error: '이름을 입력해 주세요.' }
+  }
+  if (!isValidDateStr(date)) {
+    return { error: '유효하지 않은 날짜입니다.' }
+  }
+  if (
+    !Number.isInteger(startMin) ||
+    !Number.isInteger(endMin) ||
+    startMin % SNAP_MIN !== 0 ||
+    endMin % SNAP_MIN !== 0 ||
+    startMin < GRID_START_MIN ||
+    endMin <= startMin ||
+    endMin > GRID_END_MIN
+  ) {
+    return { error: '유효하지 않은 시간입니다.' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: blocks, error: blocksError } = await supabase
+    .from('blocks')
+    .select('start_min, end_min')
+    .eq('user_id', user.id)
+    .eq('date', date)
+  if (blocksError) {
+    return { error: '생성에 실패했습니다. 다시 시도해 주세요.' }
+  }
+  if (
+    (blocks ?? []).some((b) => overlaps(startMin, endMin, b.start_min, b.end_min))
+  ) {
+    return { error: '해당 시간대에 이미 다른 블록이 있습니다.' }
+  }
+
+  const { data: task, error: taskError } = await supabase
+    .from('tasks')
+    .insert({ user_id: user.id, date, title: trimmed, kind: 'fixed' })
+    .select('id')
+    .single()
+  if (taskError || !task) {
+    return { error: '생성에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  const { error: blockError } = await supabase.from('blocks').insert({
+    user_id: user.id,
+    task_id: task.id,
+    date,
+    start_min: startMin,
+    end_min: endMin,
+  })
+  if (blockError) {
+    // 고아 task 롤백 — supabase-js에 트랜잭션이 없어 보상 삭제로 처리
+    await supabase.from('tasks').delete().eq('id', task.id).eq('user_id', user.id)
+    return { error: '생성에 실패했습니다. 다시 시도해 주세요.' }
   }
 
   refresh()
@@ -504,12 +606,14 @@ export async function carryTaskToDate(
     return { error: '이미 배치된 항목은 가져올 수 없습니다.' }
   }
 
-  // is_top3 리셋 — 대상 날짜의 TOP3 하드 제한(3개)을 이월이 우회하지 못하게 한다
+  // is_top3 리셋 — 대상 날짜의 TOP3 하드 제한(3개)을 이월이 우회하지 못하게 한다.
+  // kind='task'만 — 고정 시간은 이월 대상이 아니다 (밥먹기를 내일로 이월하지 않는다, D2)
   const { data: updated, error } = await supabase
     .from('tasks')
     .update({ date: targetDate, is_top3: false })
     .eq('id', id)
     .eq('user_id', user.id)
+    .eq('kind', 'task')
     .select('id')
   if (error || !updated || updated.length === 0) {
     return { error: '가져오기에 실패했습니다. 다시 시도해 주세요.' }

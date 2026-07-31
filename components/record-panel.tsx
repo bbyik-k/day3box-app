@@ -21,9 +21,11 @@ export function RecordPanel({
   onStatus: (id: string, status: BlockStatus) => void
   onDelete: (id: string) => void
 }) {
-  const doneCount = blocks.filter((b) => b.status === 'done').length
-  const partialCount = blocks.filter((b) => b.status === 'partial').length
-  const movedCount = blocks.filter((b) => b.status === 'moved').length
+  // 고정 시간(fixed)은 기록 대상이 아니다 — 집계에서 제외 (D2, 2026-07-31 오너 확정)
+  const recordBlocks = blocks.filter((b) => b.kind !== 'fixed')
+  const doneCount = recordBlocks.filter((b) => b.status === 'done').length
+  const partialCount = recordBlocks.filter((b) => b.status === 'partial').length
+  const movedCount = recordBlocks.filter((b) => b.status === 'moved').length
 
   const topTasks = tasks.filter((t) => t.is_top3)
 
@@ -116,6 +118,29 @@ export function RecordPanel({
           <p className="mt-2 text-[12px] text-text/50">
             블록을 누르면 상태를 기록할 수 있다.
           </p>
+        ) : selectedBlock.kind === 'fixed' ? (
+          // 확보한 시간은 기록 대상이 아니다 — 상태 세그먼트 없이 배치 취소만
+          <div className="record-card mt-2" data-testid="record-card-fixed">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text/50">
+              확보한 시간
+            </div>
+            <div className="text-[17px] font-semibold mt-1 truncate">
+              {selectedBlock.title} · {formatMin(selectedBlock.start_min)}
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-[12px] text-text/50">
+                할 일이 아니라 기록하지 않는다.
+              </p>
+              <button
+                type="button"
+                data-testid="block-delete"
+                onClick={() => onDelete(selectedBlock.id)}
+                className="shrink-0 text-[12px] text-text/50 hover:text-accent-2"
+              >
+                배치 취소 ×
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="record-card mt-2" data-testid="record-card">
             <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-accent">

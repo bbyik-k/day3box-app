@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   addTask,
   carryTaskToDate,
+  createFixedBlock,
   deleteBlock,
   deleteTask,
   moveBlock,
@@ -81,6 +82,7 @@ function reduce(store: Store, action: StoreAction): Store {
             is_top3: false,
             est_min: null,
             category: null,
+            kind: 'task',
           },
         ],
       }
@@ -256,9 +258,13 @@ export function DayView({
       ...b,
       title: task?.title ?? '(삭제된 항목)',
       category: task?.category ?? null,
+      kind: task?.kind ?? 'task',
       part,
     }
   })
+
+  // 좌측(계획·기록)은 할 일만 — 고정 시간(fixed)은 그리드에만 존재한다 (D2)
+  const planTasks = store.tasks.filter((t) => t.kind === 'task')
 
   // refresh 후 선택 블록이 사라졌으면(삭제 등) 선택 해제
   const selectedBlock = blockViews.find((b) => b.id === selectedId) ?? null
@@ -391,6 +397,17 @@ export function DayView({
     )
   }
 
+  // 고정 시간 드래그 생성(D1) — 이름 입력 단계가 있어 낙관 없이 refresh 결과 대기 (handoff §6)
+  function handleCreateFixed(startMin: number, endMin: number, title: string) {
+    startTransition(async () => {
+      setError(null)
+      const result = await createFixedBlock(title, date, startMin, endMin)
+      if (result?.error) {
+        setError(result.error)
+      }
+    })
+  }
+
   function handleCarry(id: string) {
     run({ type: 'carry', id }, () => carryTaskToDate(id, date))
   }
@@ -456,7 +473,7 @@ export function DayView({
         <div className="flex flex-col gap-6">
           {mode === 'plan' ? (
             <PlanPanel
-              tasks={store.tasks}
+              tasks={planTasks}
               blocks={store.blocks}
               carryTasks={store.carryTasks}
               error={error}
@@ -472,7 +489,7 @@ export function DayView({
             />
           ) : (
             <RecordPanel
-              tasks={store.tasks}
+              tasks={planTasks}
               blocks={blockViews}
               selectedBlock={selectedBlock}
               onStatus={handleStatus}
@@ -489,6 +506,7 @@ export function DayView({
             onSelect={handleSelect}
             onCommitMove={handleCommitMove}
             onDelete={handleDeleteBlock}
+            onCreateFixed={handleCreateFixed}
           />
         </div>
       </div>

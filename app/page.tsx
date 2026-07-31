@@ -32,7 +32,7 @@ export default async function Home(props: {
   ] = await Promise.all([
     supabase
       .from('tasks')
-      .select('id, title, is_top3, est_min, category')
+      .select('id, title, is_top3, est_min, category, kind')
       .eq('user_id', user.id)
       .eq('date', date)
       .order('created_at', { ascending: true }),
@@ -44,12 +44,13 @@ export default async function Home(props: {
       .eq('date', date)
       .order('start_min', { ascending: true }),
     // 미배치 task 이월 노출(길 B) — 전날 tasks + 전날 blocks의 task_id 두 쿼리 후 필터
-    // (PostgREST에 NOT EXISTS가 없다)
+    // (PostgREST에 NOT EXISTS가 없다). 고정 시간(fixed)은 이월 대상이 아니다 (D2)
     supabase
       .from('tasks')
-      .select('id, title, is_top3, est_min, category')
+      .select('id, title, is_top3, est_min, category, kind')
       .eq('user_id', user.id)
       .eq('date', prevDate)
+      .eq('kind', 'task')
       .order('created_at', { ascending: true }),
     supabase
       .from('blocks')

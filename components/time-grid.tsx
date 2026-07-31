@@ -1,14 +1,19 @@
 'use client'
 
-import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { nowMinutesInSeoul } from '@/lib/date'
 import {
   GRID_END_MIN,
   GRID_HEIGHT_PX,
   GRID_HOURS,
   GRID_START_MIN,
+  PX_PER_HOUR,
+  SNAP_MIN,
+  floorToSnap,
   formatMin,
   minToY,
+  overlaps,
+  roundToSnap,
 } from '@/lib/grid'
 import { GridBlock } from '@/components/grid-block'
 
@@ -22,7 +27,17 @@ export type BlockView = {
   status: string
   title: string
   category: string | null
+  kind: string
   part: { index: number; total: number } | null
+}
+
+// 드래그 생성(D1)의 고스트 상태 — 몇 초만 존재하고 이미지에 나오지 않는다 (handoff §6)
+type Draft = {
+  pointerId: number
+  anchor: number
+  start: number
+  end: number
+  moved: boolean
 }
 
 // 매분 갱신되는 현재 시각 구독 — 하루 종일 열어두는 화면이라 고정 라인은 거짓말이 된다
@@ -44,6 +59,7 @@ export function TimeGrid({
   onSelect,
   onCommitMove,
   onDelete,
+  onCreateFixed,
 }: {
   blocks: BlockView[]
   selectedId: string | null
@@ -52,6 +68,7 @@ export function TimeGrid({
   onSelect: (id: string) => void
   onCommitMove: (id: string, startMin: number, endMin: number) => void
   onDelete: (id: string) => void
+  onCreateFixed: (startMin: number, endMin: number, title: string) => void
 }) {
   // 서버 스냅샷은 null — 지금 라인은 클라이언트에서만 렌더돼 hydration 불일치가 없다
   const nowMin = useSyncExternalStore<number | null>(
@@ -60,10 +77,16 @@ export function TimeGrid({
     serverNowSnapshot,
   )
   const scrollRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
   const didAutoScroll = useRef(false)
+  const [draft, setDraft] = useState<Draft | null>(null)
+  // 놓은 뒤 이름 입력 단계 — 확정 전까지 블록은 생기지 않는다
+  const [naming, setNaming] = useState<{ start: number; end: number } | null>(
+    null,
+  )
 
   // 진입 시 현재 시각으로 자동 스크롤 (PRD 7.1 #1 — 범위보다 스크롤 위치가 체감 UX를 좌우).
-  // 오늘이 아니면 스킵 — 과거/미래 날짜는 06:00부터 보여준다 (리셋은 key={date} 리마운트가 담당)
+  // 오늘이 아니면 스킵 — 과거/미래 날짜는 그리드 시작부터 (리셋은 key={date} 리마운트가 담당)
   useEffect(() => {
     const container = scrollRef.current
     if (
@@ -87,27 +110,110 @@ export function TimeGrid({
     nowMin >= GRID_START_MIN &&
     nowMin <= GRID_END_MIN
 
+  // ── 드래그 생성 (D1/4a): 빈 영역 pointerdown → 고스트 → 놓으면 이름 입력 → 고정 시간 생성
+
+  function yToMin(clientY: number): number {
+    const rect = innerRef.current?.getBoundingClientRect()
+    if (!rect) {
+      return GRID_START_MIN
+    }
+    return GRID_START_MIN + ((clientY - rect.top) / PX_PER_HOUR) * 60
+  }
+
+  function draftConflicts(start: number, end: number): boolean {
+    return blocks.some((b) => overlaps(start, end, b.start_min, b.end_min))
+  }
+
+  function handleGridPointerDown(e: React.PointerEvent) {
+    if (
+      e.button !== 0 ||
+      !e.isPrimary ||
+      draft !== null ||
+      naming !== null ||
+      (e.target instanceof Element &&
+        e.target.closest('[data-testid="grid-block"]') !== null)
+    ) {
+      return
+    }
+    const anchor = Math.min(
+      Math.max(floorToSnap(yToMin(e.clientY)), GRID_START_MIN),
+      GRID_END_MIN - SNAP_MIN,
+    )
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setDraft({
+      pointerId: e.pointerId,
+      anchor,
+      start: anchor,
+      end: anchor + SNAP_MIN,
+      moved: false,
+    })
+  }
+
+  function handleGridPointerMove(e: React.PointerEvent) {
+    if (draft === null || e.pointerId !== draft.pointerId) {
+      return
+    }
+    const cur = Math.min(
+      Math.max(roundToSnap(yToMin(e.clientY)), GRID_START_MIN),
+      GRID_END_MIN,
+    )
+    // 위·아래 어느 방향으로 끌어도 anchor 기준으로 범위가 된다
+    const start = Math.min(draft.anchor, cur)
+    const end = Math.max(draft.anchor + SNAP_MIN, cur)
+    setDraft({ ...draft, start, end, moved: true })
+  }
+
+  function handleGridPointerUp(e: React.PointerEvent) {
+    if (draft === null || e.pointerId !== draft.pointerId) {
+      return
+    }
+    const { start, end, moved } = draft
+    setDraft(null)
+    // 무이동 클릭·겹침이면 생성하지 않는다
+    if (!moved || draftConflicts(start, end)) {
+      return
+    }
+    setNaming({ start, end })
+  }
+
+  function commitNaming(title: string) {
+    if (naming === null) {
+      return
+    }
+    const { start, end } = naming
+    setNaming(null)
+    const trimmed = title.trim()
+    if (trimmed === '') {
+      return
+    }
+    onCreateFixed(start, end, trimmed)
+  }
+
+  const draftInvalid = draft !== null && draftConflicts(draft.start, draft.end)
+  const draftDuration = draft !== null ? draft.end - draft.start : 0
+
   return (
     <section>
       <div className="flex items-baseline justify-between mb-4">
         <h6 className="text-[13px] font-semibold uppercase tracking-[0.08em]">
           타임박스 · 04 – 익일 03시
         </h6>
+        {/* 3위계 범례 (handoff §3-1) — 막대의 유무가 "이건 일인가"의 답 */}
         <div className="flex items-center gap-4 text-[12px] text-text/60">
           <span className="inline-flex items-center gap-[5px]">
-            <span aria-hidden="true" className="size-[9px] bg-accent" />
-            완료
+            <span aria-hidden="true" className="h-[11px] w-[4px] bg-accent" />
+            오늘의 셋
           </span>
           <span className="inline-flex items-center gap-[5px]">
-            <span aria-hidden="true" className="size-[9px] bg-accent opacity-50" />
-            부분
+            <span aria-hidden="true" className="h-[11px] w-[4px] bg-neutral" />
+            나머지 할 일
           </span>
           <span className="inline-flex items-center gap-[5px]">
             <span
               aria-hidden="true"
-              className="size-[9px] border border-dashed border-neutral"
+              className="h-[11px] w-[11px] border border-divider"
             />
-            이월
+            확보한 시간
           </span>
         </div>
       </div>
@@ -123,7 +229,15 @@ export function TimeGrid({
         className="overflow-y-auto max-h-[calc(100vh-240px)]"
         data-testid="grid-scroll"
       >
-        <div className="relative" style={{ height: GRID_HEIGHT_PX }}>
+        <div
+          ref={innerRef}
+          className="relative touch-none"
+          style={{ height: GRID_HEIGHT_PX }}
+          onPointerDown={handleGridPointerDown}
+          onPointerMove={handleGridPointerMove}
+          onPointerUp={handleGridPointerUp}
+          onPointerCancel={() => setDraft(null)}
+        >
           {Array.from({ length: GRID_HOURS + 1 }, (_, i) => {
             const min = GRID_START_MIN + i * 60
             return (
@@ -140,6 +254,18 @@ export function TimeGrid({
             )
           })}
 
+          {/* 10분 눈금은 드래그 중에만 (handoff §6) */}
+          {draft !== null && (
+            <div
+              aria-hidden="true"
+              className="absolute inset-y-0 right-0 left-[44px] pointer-events-none"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(to bottom, transparent 0 9px, color-mix(in srgb, var(--color-text) 7%, transparent) 9px 10px)',
+              }}
+            />
+          )}
+
           {blocks.map((block) => (
             <GridBlock
               key={block.id}
@@ -150,6 +276,59 @@ export function TimeGrid({
               onDelete={onDelete}
             />
           ))}
+
+          {/* 드래그 고스트 — 정보는 하단(끄는 쪽), 겹침이면 중립 실선 (크림슨 금지) */}
+          {draft !== null && draft.moved && (
+            <div
+              className="ghost-block"
+              data-invalid={draftInvalid || undefined}
+              data-testid="ghost-block"
+              style={{
+                top: minToY(draft.start),
+                height: draftDuration * (PX_PER_HOUR / 60),
+              }}
+            >
+              <div
+                className={`absolute inset-x-0 bottom-0 flex items-end justify-between px-[10px] pb-[3px] text-[11px] leading-none ${
+                  draftDuration <= 20 ? 'gap-2' : ''
+                }`}
+              >
+                <span className="font-semibold">{draftDuration}분</span>
+                <span className="text-text/60">
+                  {formatMin(draft.start)}–{formatMin(draft.end)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* 이름 입력 — 확정(Enter) 전까지 생성되지 않는다. Esc·blur·빈 값 = 취소 */}
+          {naming !== null && (
+            <div
+              className="ghost-block"
+              style={{
+                top: minToY(naming.start),
+                height: (naming.end - naming.start) * (PX_PER_HOUR / 60),
+              }}
+            >
+              <input
+                autoFocus
+                type="text"
+                placeholder="확보할 시간의 이름…"
+                aria-label="고정 시간 이름"
+                data-testid="fixed-name-input"
+                className="absolute inset-x-[10px] top-1/2 -translate-y-1/2 bg-transparent text-[13px] outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    commitNaming(e.currentTarget.value)
+                  }
+                  if (e.key === 'Escape') {
+                    setNaming(null)
+                  }
+                }}
+                onBlur={() => setNaming(null)}
+              />
+            </div>
+          )}
 
           {showNowLine && (
             <div

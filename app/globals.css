@@ -288,6 +288,40 @@
     border-bottom-right-radius: 0;
   }
 
+  /* 고정 시간(1b, D3): 막대 없음 · 본문 옅게 · 아주 옅은 외곽선 —
+     막대의 부재가 "이건 일이 아니다"를 전달하고, 외곽선이 빈 시간과 구분한다 (정지 이미지 기준) */
+  .grid-block[data-kind='fixed'] {
+    border-left: 4px solid transparent;
+    background: color-mix(in srgb, var(--color-surface) 45%, transparent);
+    box-shadow: none;
+    border-top: 1px solid color-mix(in srgb, var(--color-text) 10%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--color-text) 10%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-text) 10%, transparent);
+    color: color-mix(in srgb, var(--color-text) 62%, transparent);
+  }
+
+  /* 드래그 생성 고스트 (D1/4a) — 파선 시안 + 9% 배경, 하단 2px 실선("여기가 커서").
+     겹침(배치 불가)은 크림슨 금지 — 중립 실선으로 (handoff §6) */
+  .ghost-block {
+    position: absolute;
+    left: 56px;
+    right: 8px;
+    z-index: 15;
+    pointer-events: none;
+    border: 1px dashed var(--color-accent);
+    border-bottom: 2px solid var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 9%, transparent);
+    border-radius: var(--radius-md);
+  }
+  .ghost-block:has(input) {
+    pointer-events: auto;
+  }
+  .ghost-block[data-invalid] {
+    border: 1px solid var(--color-neutral);
+    border-bottom-width: 2px;
+    background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  }
+
   /* moved 블록 — 점선 + 중립 회색, 실패 색(빨강) 절대 금지 */
   .grid-block[data-status='moved'] {
     background: transparent;

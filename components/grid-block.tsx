@@ -142,6 +142,8 @@ export function GridBlock({
 
   const status = isBlockStatus(block.status) ? block.status : 'planned'
   const moved = status === 'moved'
+  // 고정 시간(fixed)은 기록 대상이 아니다 — 상태 태그·'계획됨' 라벨 미표시 (1b)
+  const fixed = block.kind === 'fixed'
 
   // 분할 표기(D4, handoff §5): n/N + 잘린 변. head=첫 조각, tail=마지막, mid=중간
   const split =
@@ -157,7 +159,7 @@ export function GridBlock({
   // 뒤 조각은 4px 들여쓰기 — 파선만으로는 잘림 신호가 약하다 (handoff §5)
   const indent = split === 'tail' || split === 'mid'
   const statusTag =
-    status === 'done' ? (
+    fixed ? null : status === 'done' ? (
       <span className="tag-done">{BLOCK_STATUS_LABELS.done}</span>
     ) : status === 'partial' ? (
       <span className="tag-partial">{BLOCK_STATUS_LABELS.partial}</span>
@@ -179,6 +181,7 @@ export function GridBlock({
       className="grid-block touch-none select-none cursor-grab"
       data-cat={block.category ?? undefined}
       data-status={status}
+      data-kind={fixed ? 'fixed' : undefined}
       data-selected={selected || undefined}
       data-split={split}
       data-testid="grid-block"
@@ -213,7 +216,7 @@ export function GridBlock({
             {moved
               ? '→ 내일로 이월'
               : `${formatMin(startMin)}–${formatMin(endMin)} · ${duration}분${
-                  status === 'planned'
+                  status === 'planned' && !fixed
                     ? ` · ${BLOCK_STATUS_LABELS.planned}`
                     : ''
                 }`}

@@ -63,6 +63,7 @@ export type Database = {
           est_min: number | null
           id: string
           is_top3: boolean
+          kind: string
           title: string
           user_id: string
         }
@@ -73,6 +74,7 @@ export type Database = {
           est_min?: number | null
           id?: string
           is_top3?: boolean
+          kind?: string
           title: string
           user_id: string
         }
@@ -83,6 +85,7 @@ export type Database = {
           est_min?: number | null
           id?: string
           is_top3?: boolean
+          kind?: string
           title?: string
           user_id?: string
         }

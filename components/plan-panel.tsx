@@ -9,7 +9,7 @@ import { Top3Panel } from '@/components/top3-panel'
 
 export type PlanTask = Pick<
   Tables<'tasks'>,
-  'id' | 'title' | 'is_top3' | 'est_min' | 'category'
+  'id' | 'title' | 'is_top3' | 'est_min' | 'category' | 'kind'
 >
 
 const TOP3_LIMIT = 3
