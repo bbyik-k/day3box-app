@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { CategoryKey } from '@/lib/category'
 import { categoryLabel } from '@/lib/category'
+import { formatMin } from '@/lib/grid'
 import type { Tables } from '@/types/supabase'
 import { BrainDump } from '@/components/brain-dump'
 import { Top3Panel } from '@/components/top3-panel'
@@ -61,7 +62,7 @@ export function PlanPanel({
     onToggleTop3(task, next)
   }
 
-  function closeSwapModal() {
+  function cancelSwap() {
     setSwapTarget(null)
     setDemoteId(null)
   }
@@ -72,7 +73,7 @@ export function PlanPanel({
     }
     const demote = demoteId
     const promote = swapTarget.id
-    closeSwapModal()
+    cancelSwap()
     onSwap(demote, promote)
   }
 
@@ -119,59 +120,83 @@ export function PlanPanel({
         </section>
       )}
 
-      <Top3Panel
-        topTasks={topTasks}
-        blocks={blocks}
-        onDemote={handleToggleTop3}
-        onEstMin={onEstMin}
-        onCategory={onCategory}
-        onPlace={onPlace}
-      />
-
-      {swapTarget && (
-        <dialog
-          ref={(el) => {
-            if (el && !el.open) {
-              el.showModal()
-            }
-          }}
-          onClose={closeSwapModal}
-          className="swap-modal m-auto w-[360px] bg-bg text-text border border-divider rounded-[4px] p-4"
-        >
+      {swapTarget === null ? (
+        <Top3Panel
+          topTasks={topTasks}
+          blocks={blocks}
+          onDemote={handleToggleTop3}
+          onEstMin={onEstMin}
+          onCategory={onCategory}
+          onPlace={onPlace}
+        />
+      ) : (
+        // TOP3 교체(5a) — 모달 없이 좌측 제자리에서 자리를 내준다 (handoff §3-2, D7)
+        <section data-testid="swap-picker">
           <h6 className="text-[13px] font-semibold uppercase tracking-[0.08em]">
-            TOP 3 교체
+            TOP 3 — 자리 바꾸기
           </h6>
-          <p className="mt-2 text-[13px] text-text/60">
-            『{swapTarget.title}』을(를) 올리려면 하나를 내려야 한다.
-          </p>
-          <div className="mt-3 flex flex-col gap-1" role="radiogroup">
-            {topTasks.map((task, index) => (
-              <label
-                key={task.id}
-                className="dump-row cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name="demote"
-                  value={task.id}
-                  checked={demoteId === task.id}
-                  onChange={() => setDemoteId(task.id)}
-                  className="accent-(--color-accent)"
-                />
-                <span className="top3-kicker">
-                  {String(index + 1).padStart(2, '0')}
-                  {categoryLabel(task.category) !== null
-                    ? ` · ${categoryLabel(task.category)}`
-                    : ''}
-                </span>
-                <span className="flex-1">{task.title}</span>
-              </label>
-            ))}
+          <div className="mt-2 flex items-center gap-2 border-l-4 border-text pl-2">
+            <span className="text-[15px] font-semibold truncate">
+              {swapTarget.title}
+            </span>
           </div>
-          <div className="mt-4 flex justify-end gap-2">
+          <p className="mt-2 text-[13px] text-text/60">
+            어느 자리에 넣을까요? 내려간 하나는 일반 할 일이 됩니다. 배치는
+            그대로 유지됩니다.
+          </p>
+
+          <div className="mt-3 flex flex-col gap-2" role="radiogroup">
+            {topTasks.map((task, index) => {
+              const taskBlocks = blocks
+                .filter((b) => b.task_id === task.id)
+                .sort((a, b) => a.start_min - b.start_min)
+              const label = categoryLabel(task.category)
+              const selected = demoteId === task.id
+              // 이미 배치한 것을 내리는 것과 아직 안 놓은 것은 무게가 다르다 (5b에서 가져온 개선)
+              const info =
+                taskBlocks.length > 0
+                  ? `${task.est_min !== null ? `${task.est_min}분 · ` : ''}${formatMin(taskBlocks[0].start_min)} 배치됨`
+                  : `${task.est_min !== null ? `${task.est_min}분 · ` : ''}미배치`
+              return (
+                <button
+                  key={task.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  data-selected={selected || undefined}
+                  data-cat={task.category ?? undefined}
+                  onClick={() => setDemoteId(task.id)}
+                  className="pick"
+                >
+                  <div className="flex items-baseline gap-2">
+                    <span className="top3-kicker">
+                      {String(index + 1).padStart(2, '0')}
+                      {label !== null ? ` · ${label}` : ''}
+                    </span>
+                    <span className="flex-1" />
+                    <span className="text-[11px] text-text/50">{info}</span>
+                  </div>
+                  <div
+                    className={`mt-[2px] text-[16px] font-semibold truncate ${
+                      selected ? 'text-text/50' : ''
+                    }`}
+                  >
+                    {task.title}
+                  </div>
+                  {selected && (
+                    <div className="mt-[6px] text-[12px] text-accent">
+                      ↑ {swapTarget.title}이(가) 이 자리로
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="mt-3 flex justify-end gap-2">
             <button
               type="button"
-              onClick={closeSwapModal}
+              onClick={cancelSwap}
               className="border border-divider px-3 py-1 rounded-sm text-[13px] hover:border-text"
             >
               취소
@@ -182,10 +207,10 @@ export function PlanPanel({
               onClick={handleSwapConfirm}
               className="border border-text px-3 py-1 rounded-sm text-[13px] hover:bg-text hover:text-bg disabled:opacity-30"
             >
-              교체
+              바꾸기
             </button>
           </div>
-        </dialog>
+        </section>
       )}
     </div>
   )

@@ -141,8 +141,7 @@ export function GridBlock({
   const tier = duration >= 45 ? 'full' : duration >= 25 ? 'line' : 'micro'
 
   const status = isBlockStatus(block.status) ? block.status : 'planned'
-  const moved = status === 'moved'
-  // 고정 시간(fixed)은 기록 대상이 아니다 — 상태 태그·'계획됨' 라벨 미표시 (1b)
+  // 고정 시간(fixed)은 기록 대상이 아니다 — 상태 표식 미표시 (1b)
   const fixed = block.kind === 'fixed'
 
   // 분할 표기(D4, handoff §5): n/N + 잘린 변. head=첫 조각, tail=마지막, mid=중간
@@ -158,12 +157,16 @@ export function GridBlock({
     block.part !== null ? `${block.part.index}/${block.part.total}` : null
   // 뒤 조각은 4px 들여쓰기 — 파선만으로는 잘림 신호가 약하다 (handoff §5)
   const indent = split === 'tail' || split === 'mid'
-  const statusTag =
-    fixed ? null : status === 'done' ? (
-      <span className="tag-done">{BLOCK_STATUS_LABELS.done}</span>
-    ) : status === 'partial' ? (
-      <span className="tag-partial">{BLOCK_STATUS_LABELS.partial}</span>
-    ) : null
+  // 상태는 우측 인쇄 표식(□■◧▨)으로만 — 본문 무게는 4상태 동일 (6b, handoff §4)
+  const MK_CLASS = {
+    planned: 'mk-plan',
+    done: 'mk-done',
+    partial: 'mk-part',
+    moved: 'mk-move',
+  } as const
+  const statusMark = fixed ? null : (
+    <span aria-hidden="true" className={`mk ${MK_CLASS[status]} shrink-0`} />
+  )
 
   const dragShadow = '0 4px 12px rgba(32, 30, 29, 0.25)'
   const selectRing = '0 0 0 2px var(--color-accent)'
@@ -199,9 +202,7 @@ export function GridBlock({
       {tier === 'full' ? (
         <div className={`py-[7px] ${indent ? 'pl-[14px] pr-[10px]' : 'px-[10px]'}`}>
           <div className="flex items-center gap-1">
-            <div
-              className={`font-semibold truncate text-[14px] ${moved ? 'text-text/50' : ''}`}
-            >
+            <div className="font-semibold truncate text-[14px]">
               {block.title}
             </div>
             {partLabel && (
@@ -209,45 +210,38 @@ export function GridBlock({
                 {partLabel}
               </span>
             )}
-            <span className="flex-1" />
-            {statusTag}
           </div>
-          <div className="text-[11px] text-text/60 mt-[2px]">
-            {moved
-              ? '→ 내일로 이월'
-              : `${formatMin(startMin)}–${formatMin(endMin)} · ${duration}분${
-                  status === 'planned' && !fixed
-                    ? ` · ${BLOCK_STATUS_LABELS.planned}`
-                    : ''
-                }`}
+          {/* 메타 + 우측 표식·라벨 — 이월에 날짜·부분에 비율을 쓰지 않는다 (미결 3·4) */}
+          <div className="mt-[2px] flex items-center gap-[5px] text-[11px] text-text/60">
+            <span className="flex-1 truncate">
+              {formatMin(startMin)}–{formatMin(endMin)} · {duration}분
+            </span>
+            {statusMark}
+            {!fixed && (
+              <span className="shrink-0">{BLOCK_STATUS_LABELS[status]}</span>
+            )}
           </div>
         </div>
       ) : (
-        // line(30~44분)·micro(15~29분): 한 줄 — 제목 좌측 + 시간 우측 (우측은 늘 여백이라 겹침 없음)
+        // line(25~44분)·micro(10~24분): 한 줄 — 제목 좌측 + 시간·표식 우측
         <div
           className={`h-full flex items-center gap-2 leading-none ${
             indent ? 'pl-[14px] pr-[10px]' : 'px-[10px]'
           } ${tier === 'micro' ? 'text-[11px]' : 'text-[13px]'}`}
         >
-          <div
-            className={`font-semibold truncate ${moved ? 'text-text/50' : ''}`}
-          >
-            {block.title}
-          </div>
+          <div className="font-semibold truncate">{block.title}</div>
           {partLabel && (
             <span className="shrink-0 text-[11px] font-normal text-text/45">
               {partLabel}
             </span>
           )}
           <span className="flex-1" />
-          {statusTag}
           <span className="shrink-0 text-[11px] text-text/60">
-            {moved
-              ? '→ 내일로 이월'
-              : tier === 'micro'
-                ? `${formatMin(startMin)} · ${duration}분`
-                : `${formatMin(startMin)}–${formatMin(endMin)} · ${duration}분`}
+            {tier === 'micro'
+              ? `${formatMin(startMin)} · ${duration}분`
+              : `${formatMin(startMin)}–${formatMin(endMin)} · ${duration}분`}
           </span>
+          {statusMark}
         </div>
       )}
 

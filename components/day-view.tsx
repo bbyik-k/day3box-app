@@ -257,7 +257,9 @@ export function DayView({
     return {
       ...b,
       title: task?.title ?? '(삭제된 항목)',
-      category: task?.category ?? null,
+      // 색은 TOP3에만 (관통 규칙 1) — 강등되면 막대가 즉시 회색이 된다
+      category:
+        task !== undefined && task.is_top3 ? task.category : null,
       kind: task?.kind ?? 'task',
       part,
     }

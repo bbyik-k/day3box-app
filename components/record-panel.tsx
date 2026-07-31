@@ -92,14 +92,20 @@ export function RecordPanel({
                   <span className="flex-1 truncate">{task.title}</span>
                   {status === null ? (
                     <span className="text-[12px] text-text/45">미배치</span>
-                  ) : status === 'done' ? (
-                    <span className="tag-done">{BLOCK_STATUS_LABELS.done}</span>
-                  ) : status === 'partial' ? (
-                    <span className="tag-partial">
-                      {BLOCK_STATUS_LABELS.partial}
-                    </span>
                   ) : (
-                    <span className="text-[12px] text-text/60">
+                    // 상태 표식 + 텍스트 (6b — handoff §3-3)
+                    <span className="inline-flex items-center gap-[5px] text-[12px] text-text/60">
+                      <span
+                        aria-hidden="true"
+                        className={`mk ${
+                          {
+                            planned: 'mk-plan',
+                            done: 'mk-done',
+                            partial: 'mk-part',
+                            moved: 'mk-move',
+                          }[status]
+                        }`}
+                      />
                       {BLOCK_STATUS_LABELS[status]}
                     </span>
                   )}
