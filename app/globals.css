@@ -103,15 +103,74 @@
   [data-cat='cat4'] { --cat: var(--color-cat4); }
   [data-cat='cat5'] { --cat: var(--color-cat5); }
 
-  /* TOP3 카드 — 바·kicker·pill 색은 --cat 하나에서 파생 */
+  /* TOP3 카드 — 바·kicker·pill 색은 --cat 하나에서 파생 (칩·스테퍼 도입으로 세로 구성) */
   .top3-card {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 10px;
     padding: 10px;
     background: var(--color-surface);
     border-radius: var(--radius-md);
     border-left: 4px solid var(--cat, var(--color-divider));
+  }
+
+  /* 소요시간 프리셋 칩 + ±10 스테퍼 (핸드오프 handoff-v0-002/day3box.css 이식 —
+     자유 입력 제거: 어림값이라는 사실을 입력 자체가 전달한다, D6) */
+  .chip {
+    flex: 1;
+    min-height: 36px;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 13px;
+    line-height: 1;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--color-text) 16%, transparent);
+    border-radius: var(--radius-sm);
+    color: color-mix(in srgb, var(--color-text) 62%, transparent);
+    cursor: pointer;
+  }
+  .chip:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .chip:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .chip-on {
+    background: var(--color-text);
+    border-color: var(--color-text);
+    color: var(--color-bg);
+    font-weight: 600;
+  }
+  .chip-on:hover {
+    background: var(--color-text);
+    color: var(--color-bg);
+    border-color: var(--color-text);
+  }
+  .stp {
+    flex: none;
+    width: 44px;
+    min-height: 36px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--color-text) 16%, transparent);
+    border-radius: var(--radius-sm);
+    color: color-mix(in srgb, var(--color-text) 62%, transparent);
+    cursor: pointer;
+  }
+  .stp:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .stp:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
   /* 노랑(cat3)은 밝은 배경 위 텍스트 가독성이 나빠 잉크만 중립으로 (목업의 neutral 대체 재현) */
   .top3-card[data-cat='cat3'] { --cat-ink: color-mix(in srgb, var(--color-text) 70%, transparent); }

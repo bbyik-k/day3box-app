@@ -360,13 +360,8 @@ export async function moveBlock(
     return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
   }
 
-  // 양방향 동기화: 블록 높이가 곧 소요시간 — 리사이즈 확정 시 카드의 분도 따라간다
-  // (이동은 duration 보존이라 사실상 no-op, 불변식 유지 목적으로 항상 갱신)
-  await supabase
-    .from('tasks')
-    .update({ est_min: endMin - startMin })
-    .eq('id', block.task_id)
-    .eq('user_id', user.id)
+  // 비동기화(ADR-0002): 리사이즈는 est_min을 갱신하지 않는다 —
+  // est=계획 총량, 블록 합=배치량, 차이=미배치 잔량 (분할의 전제)
 
   refresh()
 }
@@ -400,17 +395,21 @@ export async function setBlockStatus(
   refresh()
 }
 
-// 양방향 동기화: 분 수정 시 배치된 블록의 높이(end_min)도 재계산.
-// 겹침·그리드 범위 초과가 하나라도 있으면 전체 거부 — task와 블록이 어긋난 채 저장되지 않는다
+// 비동기화(ADR-0002): 분 수정은 배치된 블록을 건드리지 않는다 —
+// est=계획 총량(칩으로 어림), 실제 조정은 그리드 리사이즈가 담당 (역할 분담, D6)
 export async function setEstMin(
   id: string,
   estMin: number | null,
 ): Promise<{ error: string } | undefined> {
+  // 10분 배수 제약 (D5·D6) — DB CHECK와 동일 규칙
   if (
     estMin !== null &&
-    (!Number.isInteger(estMin) || estMin < 5 || estMin > 1440)
+    (!Number.isInteger(estMin) ||
+      estMin < 10 ||
+      estMin > 1440 ||
+      estMin % 10 !== 0)
   ) {
-    return { error: '소요시간은 5~1440 사이의 분 단위로 입력해 주세요.' }
+    return { error: '소요시간은 10분 단위로 입력해 주세요.' }
   }
 
   const supabase = await createClient()
@@ -419,58 +418,6 @@ export async function setEstMin(
   } = await supabase.auth.getUser()
   if (!user) {
     redirect('/login')
-  }
-
-  if (estMin !== null) {
-    const { data: taskBlocks, error: taskBlocksError } = await supabase
-      .from('blocks')
-      .select('id, date, start_min')
-      .eq('task_id', id)
-      .eq('user_id', user.id)
-    if (taskBlocksError) {
-      return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
-    }
-
-    if ((taskBlocks ?? []).length > 0) {
-      const dates = [...new Set((taskBlocks ?? []).map((b) => b.date))]
-      const { data: dayBlocks, error: dayBlocksError } = await supabase
-        .from('blocks')
-        .select('id, date, start_min, end_min')
-        .eq('user_id', user.id)
-        .in('date', dates)
-      if (dayBlocksError) {
-        return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
-      }
-
-      for (const b of taskBlocks ?? []) {
-        const newEnd = b.start_min + estMin
-        if (newEnd > GRID_END_MIN) {
-          return { error: '그리드 범위(24:00)를 넘어 소요시간을 변경할 수 없습니다.' }
-        }
-        const conflict = (dayBlocks ?? []).some(
-          (o) =>
-            o.id !== b.id &&
-            o.date === b.date &&
-            overlaps(b.start_min, newEnd, o.start_min, o.end_min),
-        )
-        if (conflict) {
-          return {
-            error: '겹치는 블록이 있어 소요시간을 변경할 수 없습니다. 블록을 먼저 옮겨 주세요.',
-          }
-        }
-      }
-
-      for (const b of taskBlocks ?? []) {
-        const { error: resizeError } = await supabase
-          .from('blocks')
-          .update({ end_min: b.start_min + estMin })
-          .eq('id', b.id)
-          .eq('user_id', user.id)
-        if (resizeError) {
-          return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
-        }
-      }
-    }
   }
 
   const { error } = await supabase

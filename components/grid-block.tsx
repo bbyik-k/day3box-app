@@ -7,6 +7,7 @@ import {
   PX_PER_HOUR,
   SNAP_MIN,
   floorToSnap,
+  formatMin,
   minToY,
   roundToSnap,
 } from '@/lib/grid'
@@ -28,12 +29,6 @@ type DragState = {
   tempStart: number
   tempEnd: number
   moved: boolean
-}
-
-function formatMin(min: number): string {
-  const h = String(Math.floor(min / 60)).padStart(2, '0')
-  const m = String(min % 60).padStart(2, '0')
-  return `${h}:${m}`
 }
 
 function clamp(value: number, lower: number, upper: number): number {
@@ -142,8 +137,8 @@ export function GridBlock({
   const endMin = dragging ? drag.tempEnd : block.end_min
   const duration = endMin - startMin
   const heightPx = (duration / 60) * PX_PER_HOUR
-  // 길이별 3단계 레이아웃 (2026-07-29 시안): full 2줄 / line 한 줄 / micro 초경량 한 줄
-  const tier = duration >= 45 ? 'full' : duration >= 30 ? 'line' : 'micro'
+  // 길이별 3단계 레이아웃 (handoff-v0-002 §2: ≥45분 2줄 / 25~44분 한 줄 / 10~24분 초경량)
+  const tier = duration >= 45 ? 'full' : duration >= 25 ? 'line' : 'micro'
 
   const status = isBlockStatus(block.status) ? block.status : 'planned'
   const moved = status === 'moved'
@@ -207,7 +202,7 @@ export function GridBlock({
         // line(30~44분)·micro(15~29분): 한 줄 — 제목 좌측 + 시간 우측 (우측은 늘 여백이라 겹침 없음)
         <div
           className={`h-full flex items-center gap-2 px-[10px] leading-none ${
-            tier === 'micro' ? 'text-[12px]' : 'text-[13px]'
+            tier === 'micro' ? 'text-[11px]' : 'text-[13px]'
           }`}
         >
           <div

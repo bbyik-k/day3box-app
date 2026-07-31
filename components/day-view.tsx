@@ -16,7 +16,7 @@ import {
   toggleTop3,
 } from '@/app/tasks/actions'
 import { nowMinutesInSeoul, shiftDate } from '@/lib/date'
-import { GRID_END_MIN, GRID_START_MIN, findNextFreeSlot, overlaps } from '@/lib/grid'
+import { GRID_START_MIN, findNextFreeSlot, overlaps } from '@/lib/grid'
 import type { CategoryKey } from '@/lib/category'
 import { CATEGORY_KEYS } from '@/lib/category'
 import type { BlockStatus } from '@/types/block'
@@ -125,24 +125,14 @@ function reduce(store: Store, action: StoreAction): Store {
         ),
       }
     }
-    case 'estMin': {
-      // 양방향 동기화 미러 — 배치된 블록 높이도 함께 (서버 setEstMin과 동일 규칙)
-      const est = action.value
+    case 'estMin':
+      // 비동기화(ADR-0002) — est는 계획 총량, 블록은 건드리지 않는다
       return {
         ...store,
         tasks: store.tasks.map((t) =>
-          t.id === action.id ? { ...t, est_min: est } : t,
+          t.id === action.id ? { ...t, est_min: action.value } : t,
         ),
-        blocks:
-          est === null
-            ? store.blocks
-            : store.blocks.map((b) =>
-                b.task_id === action.id
-                  ? { ...b, end_min: b.start_min + est }
-                  : b,
-              ),
       }
-    }
     case 'category':
       // 블록 색은 tasks에서 파생되므로 tasks 갱신만으로 그리드도 즉시 반영된다
       return {
@@ -171,6 +161,7 @@ function reduce(store: Store, action: StoreAction): Store {
         ],
       }
     case 'move':
+      // 비동기화(ADR-0002) — 리사이즈는 est_min을 갱신하지 않는다
       return {
         ...store,
         blocks: store.blocks.map((b) =>
@@ -178,13 +169,6 @@ function reduce(store: Store, action: StoreAction): Store {
             ? { ...b, start_min: action.start_min, end_min: action.end_min }
             : b,
         ),
-        // 리사이즈 → 분 갱신 미러 (이동은 duration 보존이라 사실상 no-op)
-        tasks: store.tasks.map((t) => {
-          const target = store.blocks.find((b) => b.id === action.id)
-          return target && t.id === target.task_id
-            ? { ...t, est_min: action.end_min - action.start_min }
-            : t
-        }),
       }
     case 'status':
       return {
@@ -343,27 +327,7 @@ export function DayView({
   }
 
   function handleEstMin(id: string, value: number | null) {
-    // 배치된 블록이 있으면 서버 검증(겹침·범위)을 클라이언트에서 선검사 — 즉시 에러, 서버 호출 생략
-    if (value !== null) {
-      const taskBlocks = store.blocks.filter((b) => b.task_id === id)
-      for (const b of taskBlocks) {
-        const newEnd = b.start_min + value
-        if (newEnd > GRID_END_MIN) {
-          setError('그리드 범위(24:00)를 넘어 소요시간을 변경할 수 없습니다.')
-          return
-        }
-        const conflict = store.blocks.some(
-          (o) =>
-            o.id !== b.id && overlaps(b.start_min, newEnd, o.start_min, o.end_min),
-        )
-        if (conflict) {
-          setError(
-            '겹치는 블록이 있어 소요시간을 변경할 수 없습니다. 블록을 먼저 옮겨 주세요.',
-          )
-          return
-        }
-      }
-    }
+    // 비동기화(ADR-0002) — 블록과 무관하게 계획 총량만 갱신, 선검사 불필요
     run({ type: 'estMin', id, value }, () => setEstMin(id, value))
   }
 

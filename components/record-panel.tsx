@@ -1,17 +1,12 @@
 'use client'
 
+import { formatMin } from '@/lib/grid'
 import { BLOCK_STATUS_LABELS, isBlockStatus } from '@/types/block'
 import type { BlockStatus } from '@/types/block'
 import type { PlanTask } from '@/components/plan-panel'
 import type { BlockView } from '@/components/time-grid'
 
 const STATUS_ORDER: BlockStatus[] = ['planned', 'done', 'partial', 'moved']
-
-function formatMin(min: number): string {
-  const h = String(Math.floor(min / 60)).padStart(2, '0')
-  const m = String(min % 60).padStart(2, '0')
-  return `${h}:${m}`
-}
 
 export function RecordPanel({
   tasks,

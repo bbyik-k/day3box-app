@@ -14,6 +14,11 @@ const SWATCH_CLASSES: Record<CategoryKey, string> = {
 
 const TOP3_LIMIT = 3
 
+// 프리셋 5개 고정 — 240·300은 추가하지 않는다 (블록 분할과 충돌·척도 흐림, DECISION-BRIEF-003 D6 보충)
+const EST_PRESETS = [30, 60, 90, 120, 180]
+const EST_STEP = 10
+const EST_MAX = 1440
+
 export function Top3Panel({
   topTasks,
   onDemote,
@@ -27,20 +32,13 @@ export function Top3Panel({
   onCategory: (id: string, value: CategoryKey) => void
   onPlace: (task: PlanTask) => void
 }) {
-  function handleEstMinCommit(task: PlanTask, raw: string) {
-    if (raw.trim() === '') {
-      if (task.est_min !== null) {
-        onEstMin(task.id, null)
-      }
+  // ±10 스테퍼 — 보조 수단 (프리셋 밖 값은 칩이 안 채워지고 상단 숫자만 바뀐다)
+  function handleStep(task: PlanTask, delta: number) {
+    const next = (task.est_min ?? 0) + delta
+    if (next < EST_STEP || next > EST_MAX) {
       return
     }
-    const value = Number(raw)
-    if (!Number.isInteger(value) || value < 5 || value > 1440) {
-      return
-    }
-    if (value !== task.est_min) {
-      onEstMin(task.id, value)
-    }
+    onEstMin(task.id, next)
   }
 
   const emptySlots = TOP3_LIMIT - topTasks.length
@@ -63,65 +61,95 @@ export function Top3Panel({
               className="top3-card"
               data-cat={task.category ?? undefined}
             >
-              {/* 카드 본문 클릭 = 다음 빈 슬롯 자동 배치 (PRD 7.1 #4) */}
-              <button
-                type="button"
-                onClick={() => onPlace(task)}
-                title="클릭하면 다음 빈 슬롯에 배치"
-                className="flex-1 min-w-0 text-left cursor-pointer"
-              >
-                <div className="top3-kicker">
-                  {String(index + 1).padStart(2, '0')}
-                  {label !== null ? ` · ${label}` : ''}
-                </div>
-                <div className="text-[16px] font-semibold truncate">
-                  {task.title}
-                </div>
-              </button>
-
-              <div className="flex items-center gap-1">
-                {CATEGORY_KEYS.map((key) => (
+              <div className="min-w-0 flex-1 flex flex-col gap-2">
+                {/* 헤더 행: 슬롯 라벨 + hover 도구 + 우측 상단 현재 소요시간 */}
+                <div className="flex items-center gap-2">
+                  <div className="top3-kicker flex-1 min-w-0">
+                    {String(index + 1).padStart(2, '0')}
+                    {label !== null ? ` · ${label}` : ''}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {CATEGORY_KEYS.map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-label={`카테고리 ${categoryLabel(key)}`}
+                        aria-pressed={task.category === key}
+                        onClick={() => onCategory(task.id, key)}
+                        className={`top3-tool size-[9px] rounded-full ${SWATCH_CLASSES[key]} ${
+                          task.category === key
+                            ? 'ring-1 ring-text ring-offset-1'
+                            : ''
+                        }`}
+                      />
+                    ))}
+                  </div>
                   <button
-                    key={key}
                     type="button"
-                    aria-label={`카테고리 ${categoryLabel(key)}`}
-                    aria-pressed={task.category === key}
-                    onClick={() => onCategory(task.id, key)}
-                    className={`top3-tool size-[9px] rounded-full ${SWATCH_CLASSES[key]} ${
-                      task.category === key
-                        ? 'ring-1 ring-text ring-offset-1'
-                        : ''
-                    }`}
-                  />
-                ))}
+                    onClick={() => onDemote(task)}
+                    className="top3-tool text-[12px] text-text/50 hover:text-accent-2 shrink-0"
+                  >
+                    내리기
+                  </button>
+                  <span
+                    className="shrink-0 text-[13px] font-semibold"
+                    data-testid={`est-display-${task.id}`}
+                  >
+                    {task.est_min !== null ? `${task.est_min}분` : '—'}
+                  </span>
+                </div>
+
+                {/* 제목 클릭 = 다음 빈 슬롯 자동 배치 (PRD 7.1 #4) */}
+                <button
+                  type="button"
+                  onClick={() => onPlace(task)}
+                  title="클릭하면 다음 빈 슬롯에 배치"
+                  className="min-w-0 text-left cursor-pointer"
+                >
+                  <div className="text-[16px] font-semibold truncate">
+                    {task.title}
+                  </div>
+                </button>
+
+                {/* 프리셋 칩 한 줄 5개 — 자유 입력 없음 (D6: 소요시간은 계측이 아니라 어림) */}
+                <div
+                  className="flex gap-1"
+                  role="group"
+                  aria-label={`${task.title} 소요시간 프리셋`}
+                >
+                  {EST_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      aria-pressed={task.est_min === preset}
+                      onClick={() => onEstMin(task.id, preset)}
+                      className={`chip ${task.est_min === preset ? 'chip-on' : ''}`}
+                    >
+                      {preset}분
+                    </button>
+                  ))}
+                </div>
+
+                {/* ±10 스테퍼 — 보조 (90과 120 사이가 필요할 때만) */}
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    aria-label={`${task.title} 소요시간 10분 줄이기`}
+                    onClick={() => handleStep(task, -EST_STEP)}
+                    className="stp"
+                  >
+                    −10
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`${task.title} 소요시간 10분 늘리기`}
+                    onClick={() => handleStep(task, EST_STEP)}
+                    className="stp"
+                  >
+                    +10
+                  </button>
+                </div>
               </div>
-
-              <label className="tag-tint">
-                <input
-                  key={`${task.id}-${task.est_min}`}
-                  type="number"
-                  min={5}
-                  max={1440}
-                  step={5}
-                  defaultValue={task.est_min ?? ''}
-                  aria-label={`${task.title} 소요시간(분)`}
-                  onBlur={(e) => handleEstMinCommit(task, e.currentTarget.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.currentTarget.blur()
-                    }
-                  }}
-                />
-                분
-              </label>
-
-              <button
-                type="button"
-                onClick={() => onDemote(task)}
-                className="top3-tool text-[12px] text-text/50 hover:text-accent-2 shrink-0"
-              >
-                내리기
-              </button>
             </li>
           )
         })}

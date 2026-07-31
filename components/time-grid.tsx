@@ -7,6 +7,7 @@ import {
   GRID_HEIGHT_PX,
   GRID_HOURS,
   GRID_START_MIN,
+  formatMin,
   minToY,
 } from '@/lib/grid'
 import { GridBlock } from '@/components/grid-block'
@@ -20,12 +21,6 @@ export type BlockView = {
   status: string
   title: string
   category: string | null
-}
-
-function formatMin(min: number): string {
-  const h = String(Math.floor(min / 60)).padStart(2, '0')
-  const m = String(min % 60).padStart(2, '0')
-  return `${h}:${m}`
 }
 
 // 매분 갱신되는 현재 시각 구독 — 하루 종일 열어두는 화면이라 고정 라인은 거짓말이 된다
@@ -94,7 +89,7 @@ export function TimeGrid({
     <section>
       <div className="flex items-baseline justify-between mb-4">
         <h6 className="text-[13px] font-semibold uppercase tracking-[0.08em]">
-          타임박스 · 06 – 24시
+          타임박스 · 04 – 익일 03시
         </h6>
         <div className="flex items-center gap-4 text-[12px] text-text/60">
           <span className="inline-flex items-center gap-[5px]">

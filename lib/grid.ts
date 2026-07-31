@@ -1,9 +1,9 @@
-// 타임 그리드 좌표계 (PRD 7.1 #1: 06:00–24:00 고정)
-// 분 ↔ y좌표가 단순 산술이 되도록 시간은 int(자정 기준 분)로만 다룬다
-// 1시간 = 60px (1분 = 1px) — 구 목업 42px에서 2026-07-29 시안(captures/03-edit-timebox.png)으로 변경.
-// 15분 스냅이 15px 정수가 되고, 15분 블록도 텍스트 한 줄이 들어간다
-export const GRID_START_MIN = 6 * 60
-export const GRID_END_MIN = 24 * 60
+// 타임 그리드 좌표계 (PRD 7.1 #1 개정: 04:00 ~ 익일 03:00 — 2026-07-31 D9 결정)
+// 분 ↔ y좌표가 단순 산술이 되도록 시간은 int(자정 기준 분)로만 다룬다.
+// 1440(자정) 이후 값은 익일 새벽(00:00~03:00) — 하루 경계는 04시 (lib/date.ts)
+// 1시간 = 60px (1분 = 1px, v1 사진 도입 시 90으로 전환 — 전부 이 상수에서 파생)
+export const GRID_START_MIN = 4 * 60
+export const GRID_END_MIN = 27 * 60
 export const PX_PER_HOUR = 60
 
 export const GRID_HOURS = (GRID_END_MIN - GRID_START_MIN) / 60
@@ -13,8 +13,16 @@ export function minToY(min: number): number {
   return ((min - GRID_START_MIN) / 60) * PX_PER_HOUR
 }
 
-// 배치·스냅은 항상 15분 단위 (PRD 7.1 #2)
-export const SNAP_MIN = 15
+// "HH:MM" 표기 — 자정 넘김(1440+)은 익일 새벽 00:00~03:00으로 표시 (D9)
+export function formatMin(min: number): string {
+  const normalized = min % 1440
+  const h = String(Math.floor(normalized / 60)).padStart(2, '0')
+  const m = String(normalized % 60).padStart(2, '0')
+  return `${h}:${m}`
+}
+
+// 배치·스냅은 항상 10분 단위 (PRD 7.1 #2 개정 — D5: est_min도 10분 배수라 끝점이 항상 격자 위)
+export const SNAP_MIN = 10
 
 export function ceilToSnap(min: number): number {
   return Math.ceil(min / SNAP_MIN) * SNAP_MIN
