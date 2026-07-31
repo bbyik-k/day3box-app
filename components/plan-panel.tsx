@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CategoryKey } from '@/lib/category'
 import { categoryLabel } from '@/lib/category'
 import { formatMin } from '@/lib/grid'
@@ -48,8 +48,20 @@ export function PlanPanel({
 }) {
   const [swapTarget, setSwapTarget] = useState<PlanTask | null>(null)
   const [demoteId, setDemoteId] = useState<string | null>(null)
+  const swapRef = useRef<HTMLElement>(null)
 
   const topTasks = tasks.filter((t) => t.is_top3)
+
+  // 전환 신호 — 클릭 지점(상단 체크박스)과 전환 지점(하단 TOP3 자리)이 멀어
+  // 시선·포커스를 선택 영역으로 함께 옮긴다 (실사용 피드백 2026-07-31)
+  useEffect(() => {
+    if (swapTarget === null) {
+      return
+    }
+    const section = swapRef.current
+    section?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    section?.querySelector<HTMLButtonElement>('.pick')?.focus()
+  }, [swapTarget])
 
   // 4번째 승격 시도 → 단순 차단이 아니라 교체 모달 (PRD 7.1)
   function handleToggleTop3(task: PlanTask) {
@@ -79,6 +91,13 @@ export function PlanPanel({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* 교체 중에는 스포트라이트 — 선택 영역 밖 좌측을 옅게·비활성 (가벼운 포커스 트랩) */}
+      <div
+        className={`flex flex-col gap-6 transition-opacity ${
+          swapTarget !== null ? 'opacity-40 pointer-events-none' : ''
+        }`}
+        data-testid="dimmable"
+      >
       <BrainDump
         tasks={tasks}
         error={error}
@@ -119,6 +138,7 @@ export function PlanPanel({
           </ul>
         </section>
       )}
+      </div>
 
       {swapTarget === null ? (
         <Top3Panel
@@ -131,7 +151,15 @@ export function PlanPanel({
         />
       ) : (
         // TOP3 교체(5a) — 모달 없이 좌측 제자리에서 자리를 내준다 (handoff §3-2, D7)
-        <section data-testid="swap-picker">
+        <section
+          ref={swapRef}
+          data-testid="swap-picker"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              cancelSwap()
+            }
+          }}
+        >
           <h6 className="text-[13px] font-semibold uppercase tracking-[0.08em]">
             TOP 3 — 자리 바꾸기
           </h6>
