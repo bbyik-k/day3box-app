@@ -125,6 +125,7 @@ tasks                                     -- brain dump 항목. 시간 없음. "
   date          date         not null      -- 어느 날의 brain dump인가
   title         text         not null
   is_top3       boolean      not null      default false  -- TOP3로 승격됐는가
+  kind          text         not null      default 'task' -- 'task'(할 일·좌측) | 'fixed'(확보한 시간·그리드 전용, 2026-07-31 D2. TOP3 승격·이월 불가, 기록 집계 제외. 배제한 대안: blocks.task_id nullable — 제목이 양쪽에 존재해 정규화가 깨지고 모든 조회가 left join이 됨. 경계선: 두 값 구분이지 카테고리 시스템이 아님)
   est_min       int                        -- 계획 총량(분). 칩(30/60/90/120/180)+±10로 어림 입력, 10분 배수 CHECK. 블록 길이 합과 비동기(ADR-0002: 차이=미배치 잔량)
   category      text                       -- 색상/분류. 자유 문자열로 시작
   created_at    timestamptz  not null      default now()
