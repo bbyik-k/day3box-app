@@ -238,17 +238,30 @@ export async function placeBlock(
 
   const { data: blocks, error: blocksError } = await supabase
     .from('blocks')
-    .select('start_min, end_min')
+    .select('task_id, start_min, end_min')
     .eq('user_id', user.id)
     .eq('date', task.date)
   if (blocksError) {
     return { error: '배치에 실패했습니다. 다시 시도해 주세요.' }
   }
 
-  // 오늘은 "지금 이후 다음 빈 슬롯", 다른 날짜(내일 계획·과거 보정)는 06:00부터 탐색
+  // 블록 분할(D4): 배치 클릭 = 미배치 잔량(est − 배치 합)을 다음 빈 슬롯에.
+  // 리사이즈로 줄인 뒤 다시 클릭하면 잔량이 배치된다 — 별도 분할 UI 없음
+  const placedSum = (blocks ?? [])
+    .filter((b) => b.task_id === task.id)
+    .reduce((sum, b) => sum + (b.end_min - b.start_min), 0)
+  let duration = estMin
+  if (task.est_min !== null) {
+    duration = task.est_min - placedSum
+    if (duration <= 0) {
+      return { error: '계획한 시간이 모두 배치되어 있습니다. 소요시간을 늘리거나 블록을 조정해 주세요.' }
+    }
+  }
+
+  // 오늘은 "지금 이후 다음 빈 슬롯", 다른 날짜(내일 계획·과거 보정)는 그리드 시작부터 탐색
   const fromMin =
     task.date === todayInSeoul() ? nowMinutesInSeoul() : GRID_START_MIN
-  const found = findNextFreeSlot(blocks ?? [], estMin, fromMin)
+  const found = findNextFreeSlot(blocks ?? [], duration, fromMin)
   if (found === null) {
     return { error: '그리드에 빈 자리가 없습니다.' }
   }

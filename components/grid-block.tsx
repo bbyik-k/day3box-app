@@ -142,6 +142,20 @@ export function GridBlock({
 
   const status = isBlockStatus(block.status) ? block.status : 'planned'
   const moved = status === 'moved'
+
+  // 분할 표기(D4, handoff §5): n/N + 잘린 변. head=첫 조각, tail=마지막, mid=중간
+  const split =
+    block.part === null
+      ? undefined
+      : block.part.index === 1
+        ? 'head'
+        : block.part.index === block.part.total
+          ? 'tail'
+          : 'mid'
+  const partLabel =
+    block.part !== null ? `${block.part.index}/${block.part.total}` : null
+  // 뒤 조각은 4px 들여쓰기 — 파선만으로는 잘림 신호가 약하다 (handoff §5)
+  const indent = split === 'tail' || split === 'mid'
   const statusTag =
     status === 'done' ? (
       <span className="tag-done">{BLOCK_STATUS_LABELS.done}</span>
@@ -166,6 +180,7 @@ export function GridBlock({
       data-cat={block.category ?? undefined}
       data-status={status}
       data-selected={selected || undefined}
+      data-split={split}
       data-testid="grid-block"
       style={{
         top: minToY(startMin),
@@ -179,13 +194,19 @@ export function GridBlock({
       onPointerCancel={handleCancel}
     >
       {tier === 'full' ? (
-        <div className="px-[10px] py-[7px]">
+        <div className={`py-[7px] ${indent ? 'pl-[14px] pr-[10px]' : 'px-[10px]'}`}>
           <div className="flex items-center gap-1">
             <div
-              className={`font-semibold truncate flex-1 text-[14px] ${moved ? 'text-text/50' : ''}`}
+              className={`font-semibold truncate text-[14px] ${moved ? 'text-text/50' : ''}`}
             >
               {block.title}
             </div>
+            {partLabel && (
+              <span className="shrink-0 text-[11px] font-normal text-text/45">
+                {partLabel}
+              </span>
+            )}
+            <span className="flex-1" />
             {statusTag}
           </div>
           <div className="text-[11px] text-text/60 mt-[2px]">
@@ -201,15 +222,21 @@ export function GridBlock({
       ) : (
         // line(30~44분)·micro(15~29분): 한 줄 — 제목 좌측 + 시간 우측 (우측은 늘 여백이라 겹침 없음)
         <div
-          className={`h-full flex items-center gap-2 px-[10px] leading-none ${
-            tier === 'micro' ? 'text-[11px]' : 'text-[13px]'
-          }`}
+          className={`h-full flex items-center gap-2 leading-none ${
+            indent ? 'pl-[14px] pr-[10px]' : 'px-[10px]'
+          } ${tier === 'micro' ? 'text-[11px]' : 'text-[13px]'}`}
         >
           <div
-            className={`font-semibold truncate flex-1 ${moved ? 'text-text/50' : ''}`}
+            className={`font-semibold truncate ${moved ? 'text-text/50' : ''}`}
           >
             {block.title}
           </div>
+          {partLabel && (
+            <span className="shrink-0 text-[11px] font-normal text-text/45">
+              {partLabel}
+            </span>
+          )}
+          <span className="flex-1" />
           {statusTag}
           <span className="shrink-0 text-[11px] text-text/60">
             {moved

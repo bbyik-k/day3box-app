@@ -270,6 +270,24 @@
     color: var(--color-accent-2);
   }
 
+  /* 분할 블록 잘린 변 (D4, handoff §5) — 첫 조각은 하단이 잘리고, 뒤 조각은 상단 파선.
+     색 막대는 조각별(비관통) — 고정 블록 구간을 컬러 막대가 가로지르지 않는다 */
+  .grid-block[data-split='head'] {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .grid-block[data-split='mid'],
+  .grid-block[data-split='tail'] {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 1px dashed
+      color-mix(in srgb, var(--cat, var(--color-neutral)) 55%, transparent);
+  }
+  .grid-block[data-split='mid'] {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
   /* moved 블록 — 점선 + 중립 회색, 실패 색(빨강) 절대 금지 */
   .grid-block[data-status='moved'] {
     background: transparent;

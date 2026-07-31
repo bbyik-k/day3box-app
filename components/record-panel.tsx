@@ -62,12 +62,23 @@ export function RecordPanel({
           </h6>
           <ul className="mt-2 flex flex-col gap-1">
             {topTasks.map((task) => {
-              // v0은 task:블록 사실상 1:1 — 첫 블록의 상태를 대표로 쓴다
-              const firstBlock = blocks.find((b) => b.task_id === task.id)
-              const status =
-                firstBlock !== undefined && isBlockStatus(firstBlock.status)
-                  ? firstBlock.status
-                  : null
+              // 분할(1:N) 대표 상태 — 모두 완료면 완료, 일부만 완료/부분이면 부분, 그 외 첫 블록 기준
+              const taskBlocks = blocks.filter((b) => b.task_id === task.id)
+              let status: BlockStatus | null = null
+              if (taskBlocks.length > 0) {
+                const statuses = taskBlocks.map((b) =>
+                  isBlockStatus(b.status) ? b.status : 'planned',
+                )
+                if (statuses.every((s) => s === 'done')) {
+                  status = 'done'
+                } else if (
+                  statuses.some((s) => s === 'done' || s === 'partial')
+                ) {
+                  status = 'partial'
+                } else {
+                  status = statuses[0]
+                }
+              }
               return (
                 <li key={task.id} className="flex items-center gap-2">
                   <span

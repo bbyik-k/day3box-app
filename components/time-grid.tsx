@@ -12,7 +12,8 @@ import {
 } from '@/lib/grid'
 import { GridBlock } from '@/components/grid-block'
 
-// 그리드 렌더용 블록 뷰 — 제목·카테고리는 task에서 조인 (정규화: blocks에는 없다)
+// 그리드 렌더용 블록 뷰 — 제목·카테고리는 task에서 조인 (정규화: blocks에는 없다).
+// part: 같은 task의 블록이 여럿일 때(분할, D4) 시간순 n/N — 단일 블록이면 null
 export type BlockView = {
   id: string
   task_id: string
@@ -21,6 +22,7 @@ export type BlockView = {
   status: string
   title: string
   category: string | null
+  part: { index: number; total: number } | null
 }
 
 // 매분 갱신되는 현재 시각 구독 — 하루 종일 열어두는 화면이라 고정 라인은 거짓말이 된다

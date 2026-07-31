@@ -231,13 +231,32 @@ export function DayView({
   const [store, apply] = useOptimistic(base, reduce)
 
   // 블록 뷰 파생 — 제목·카테고리를 낙관 tasks에서 조인 (정규화: blocks에는 없다)
+  // + 분할 표기(D4): 같은 task의 블록이 여럿이면 시간순 n/N
   const taskById = new Map(store.tasks.map((t) => [t.id, t]))
+  const siblingsByTask = new Map<string, RawBlock[]>()
+  for (const b of store.blocks) {
+    const arr = siblingsByTask.get(b.task_id)
+    if (arr) {
+      arr.push(b)
+    } else {
+      siblingsByTask.set(b.task_id, [b])
+    }
+  }
+  for (const arr of siblingsByTask.values()) {
+    arr.sort((a, b) => a.start_min - b.start_min)
+  }
   const blockViews: BlockView[] = store.blocks.map((b) => {
     const task = taskById.get(b.task_id)
+    const siblings = siblingsByTask.get(b.task_id)
+    const part =
+      siblings !== undefined && siblings.length > 1
+        ? { index: siblings.indexOf(b) + 1, total: siblings.length }
+        : null
     return {
       ...b,
       title: task?.title ?? '(삭제된 항목)',
       category: task?.category ?? null,
+      part,
     }
   })
 
@@ -336,13 +355,24 @@ export function DayView({
   }
 
   // 배치 — 서버와 같은 findNextFreeSlot으로 낙관 미리보기 (정상 흐름에서 슬롯 동일).
+  // 블록 분할(D4): 배치 클릭 = 미배치 잔량(est − 배치 합)을 다음 빈 슬롯에.
   // 일반 task는 소요시간 미지정이어도 기본 30분 (서버 규칙 미러)
   function handlePlace(task: PlanTask) {
     if (task.is_top3 && task.est_min === null) {
       setError('소요시간을 먼저 입력해 주세요.')
       return
     }
-    const estMin = task.est_min ?? DEFAULT_PLACE_MIN
+    let estMin = task.est_min ?? DEFAULT_PLACE_MIN
+    if (task.est_min !== null) {
+      const placedSum = store.blocks
+        .filter((b) => b.task_id === task.id)
+        .reduce((sum, b) => sum + (b.end_min - b.start_min), 0)
+      estMin = task.est_min - placedSum
+      if (estMin <= 0) {
+        setError('계획한 시간이 모두 배치되어 있습니다. 소요시간을 늘리거나 블록을 조정해 주세요.')
+        return
+      }
+    }
     const fromMin = isToday ? nowMinutesInSeoul() : GRID_START_MIN
     const slot = findNextFreeSlot(store.blocks, estMin, fromMin)
     if (slot === null) {
@@ -427,6 +457,7 @@ export function DayView({
           {mode === 'plan' ? (
             <PlanPanel
               tasks={store.tasks}
+              blocks={store.blocks}
               carryTasks={store.carryTasks}
               error={error}
               onAdd={handleAdd}

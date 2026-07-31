@@ -19,14 +19,27 @@ const EST_PRESETS = [30, 60, 90, 120, 180]
 const EST_STEP = 10
 const EST_MAX = 1440
 
+// 배치량 메타 문구 — 미결 데이터 정의 확정 전 잠정이라 상수(함수)로 분리 (handoff §5)
+function placementLabel(est: number | null, placed: number): string | null {
+  if (placed === 0) {
+    return est !== null ? '미배치' : null
+  }
+  if (est === null || placed >= est) {
+    return `${placed}분 배치됨`
+  }
+  return `총 ${est}분 중 ${placed}분 배치됨`
+}
+
 export function Top3Panel({
   topTasks,
+  blocks,
   onDemote,
   onEstMin,
   onCategory,
   onPlace,
 }: {
   topTasks: PlanTask[]
+  blocks: { task_id: string; start_min: number; end_min: number }[]
   onDemote: (task: PlanTask) => void
   onEstMin: (id: string, value: number | null) => void
   onCategory: (id: string, value: CategoryKey) => void
@@ -55,6 +68,10 @@ export function Top3Panel({
       <ul className="mt-3 flex flex-col gap-2">
         {topTasks.map((task, index) => {
           const label = categoryLabel(task.category)
+          const placed = blocks
+            .filter((b) => b.task_id === task.id)
+            .reduce((sum, b) => sum + (b.end_min - b.start_min), 0)
+          const placement = placementLabel(task.est_min, placed)
           return (
             <li
               key={task.id}
@@ -103,12 +120,20 @@ export function Top3Panel({
                 <button
                   type="button"
                   onClick={() => onPlace(task)}
-                  title="클릭하면 다음 빈 슬롯에 배치"
+                  title="클릭하면 미배치 잔량을 다음 빈 슬롯에 배치"
                   className="min-w-0 text-left cursor-pointer"
                 >
                   <div className="text-[16px] font-semibold truncate">
                     {task.title}
                   </div>
+                  {placement !== null && (
+                    <div
+                      className="mt-px text-[11px] text-text/50"
+                      data-testid={`placement-${task.id}`}
+                    >
+                      {placement}
+                    </div>
+                  )}
                 </button>
 
                 {/* 프리셋 칩 한 줄 5개 — 자유 입력 없음 (D6: 소요시간은 계측이 아니라 어림) */}

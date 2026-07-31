@@ -18,6 +18,7 @@ const TOP3_LIMIT = 3
 // 여기는 교체 모달 로컬 상태와 하드 제한(3개) 선분기만 담당한다
 export function PlanPanel({
   tasks,
+  blocks,
   carryTasks,
   error,
   onAdd,
@@ -31,6 +32,7 @@ export function PlanPanel({
   onCarryDelete,
 }: {
   tasks: PlanTask[]
+  blocks: { task_id: string; start_min: number; end_min: number }[]
   carryTasks: PlanTask[]
   error: string | null
   onAdd: (title: string) => Promise<void>
@@ -119,6 +121,7 @@ export function PlanPanel({
 
       <Top3Panel
         topTasks={topTasks}
+        blocks={blocks}
         onDemote={handleToggleTop3}
         onEstMin={onEstMin}
         onCategory={onCategory}
