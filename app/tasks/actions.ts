@@ -10,6 +10,7 @@ import {
   GRID_END_MIN,
   GRID_START_MIN,
   SNAP_MIN,
+  findAfterLastSlot,
   findNextFreeSlot,
   overlaps,
 } from '@/lib/grid'
@@ -49,6 +50,37 @@ export async function addTask(
     date,
     title: trimmed,
   })
+  if (error) {
+    return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
+  }
+
+  refresh()
+}
+
+// 제목 인라인 편집 (D14-3·4) — 리스트·그리드 블록 공용. 제목은 tasks에만 있어(정규화)
+// 한쪽에서 고치면 양쪽에 반영된다. 빈 값은 클라이언트가 원복하므로 서버는 거부만
+export async function renameTask(
+  id: string,
+  title: string,
+): Promise<{ error: string } | undefined> {
+  const trimmed = title.trim()
+  if (trimmed === '') {
+    return { error: '제목을 입력해 주세요.' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ title: trimmed })
+    .eq('id', id)
+    .eq('user_id', user.id)
   if (error) {
     return { error: '저장에 실패했습니다. 다시 시도해 주세요.' }
   }
@@ -284,10 +316,14 @@ export async function placeBlock(
       return { error: '해당 시간대에 이미 다른 블록이 있습니다.' }
     }
   } else {
-    // 오늘은 "지금 이후 다음 빈 슬롯", 다른 날짜(내일 계획·과거 보정)는 그리드 시작부터 탐색
-    const fromMin =
-      task.date === todayInSeoul() ? nowMinutesInSeoul() : GRID_START_MIN
-    found = findNextFreeSlot(blocks ?? [], duration, fromMin)
+    // 클릭 배치 = 마지막 블록 뒤 (D13 — 예측 가능). 안 들어가거나 블록이 없으면
+    // 기존 빈 슬롯 탐색으로 폴백 (오늘은 지금 이후, 다른 날짜는 그리드 시작부터)
+    found = findAfterLastSlot(blocks ?? [], duration)
+    if (found === null) {
+      const fromMin =
+        task.date === todayInSeoul() ? nowMinutesInSeoul() : GRID_START_MIN
+      found = findNextFreeSlot(blocks ?? [], duration, fromMin)
+    }
     if (found === null) {
       return { error: '그리드에 빈 자리가 없습니다.' }
     }

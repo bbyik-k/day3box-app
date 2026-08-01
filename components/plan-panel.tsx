@@ -29,6 +29,7 @@ export function PlanPanel({
   onEstMin,
   onCategory,
   onPlace,
+  onRename,
   onDragStart,
   onCarry,
   onCarryDelete,
@@ -44,6 +45,7 @@ export function PlanPanel({
   onEstMin: (id: string, value: number | null) => void
   onCategory: (id: string, value: CategoryKey) => void
   onPlace: (task: PlanTask) => void
+  onRename: (id: string, title: string) => void
   onDragStart: (task: PlanTask, e: React.PointerEvent) => void
   onCarry: (id: string) => void
   onCarryDelete: (id: string) => void
@@ -107,6 +109,8 @@ export function PlanPanel({
         onAdd={onAdd}
         onDelete={onDelete}
         onToggleTop3={handleToggleTop3}
+        onPlace={onPlace}
+        onRename={onRename}
         onDragStart={onDragStart}
       />
 
@@ -151,6 +155,8 @@ export function PlanPanel({
           onEstMin={onEstMin}
           onCategory={onCategory}
           onPlace={onPlace}
+          onRename={onRename}
+          onDragStart={onDragStart}
         />
       ) : (
         // TOP3 교체(5a) — 모달 없이 좌측 제자리에서 자리를 내준다 (handoff §3-2, D7)

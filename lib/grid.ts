@@ -24,6 +24,10 @@ export function formatMin(min: number): string {
 // 배치·스냅은 항상 10분 단위 (PRD 7.1 #2 개정 — D5: est_min도 10분 배수라 끝점이 항상 격자 위)
 export const SNAP_MIN = 10
 
+// 클릭과 드래그를 구분하는 이동 임계값 — 리스트 행·TOP3 카드·그리드 블록 공용 (D14-2, 구글 캘린더 방식)
+// v1 모바일에서는 8~10px 상향 검토
+export const DRAG_THRESHOLD_PX = 5
+
 export function ceilToSnap(min: number): number {
   return Math.ceil(min / SNAP_MIN) * SNAP_MIN
 }
@@ -57,6 +61,21 @@ export function findNextFreeSlot(
     start += SNAP_MIN
   }
   return null
+}
+
+// 클릭 배치의 1순위 슬롯: 마지막 블록 직후 (D13 — 예측 가능성이 유일하고 충분한 근거).
+// max end 뒤라 겹침이 불가능해 범위 검사만 한다. 블록이 없거나 안 들어가면 null → 빈 슬롯 탐색 폴백
+export function findAfterLastSlot(
+  existing: { start_min: number; end_min: number }[],
+  durationMin: number,
+): { start: number; end: number } | null {
+  if (existing.length === 0) {
+    return null
+  }
+  const lastEnd = Math.max(...existing.map((b) => b.end_min))
+  return lastEnd + durationMin <= GRID_END_MIN
+    ? { start: lastEnd, end: lastEnd + durationMin }
+    : null
 }
 
 // [aStart, aEnd)와 [bStart, bEnd)의 겹침 판정 — 경계 접촉(end === start)은 겹침 아님

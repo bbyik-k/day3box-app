@@ -10,6 +10,7 @@ import {
   deleteTask,
   moveBlock,
   placeBlock,
+  renameTask,
   setBlockStatus,
   setCategory,
   setEstMin,
@@ -18,11 +19,14 @@ import {
 } from '@/app/tasks/actions'
 import { nowMinutesInSeoul, shiftDate } from '@/lib/date'
 import {
+  DRAG_THRESHOLD_PX,
   GRID_END_MIN,
   GRID_START_MIN,
   PX_PER_HOUR,
   SNAP_MIN,
+  findAfterLastSlot,
   findNextFreeSlot,
+  minToY,
   overlaps,
   roundToSnap,
 } from '@/lib/grid'
@@ -55,6 +59,7 @@ type StoreAction =
   | { type: 'delete'; id: string }
   | { type: 'toggleTop3'; id: string; value: boolean }
   | { type: 'swap'; demoteId: string; promoteId: string }
+  | { type: 'rename'; id: string; title: string }
   | { type: 'estMin'; id: string; value: number | null }
   | { type: 'category'; id: string; value: CategoryKey }
   | { type: 'place'; task: PlanTask; tempId: string; start: number; end: number }
@@ -135,6 +140,14 @@ function reduce(store: Store, action: StoreAction): Store {
         ),
       }
     }
+    case 'rename':
+      // 제목은 tasks에만 — 블록 제목은 파생이라 자동 갱신 (D14-4, ADR-0001)
+      return {
+        ...store,
+        tasks: store.tasks.map((t) =>
+          t.id === action.id ? { ...t, title: action.title } : t,
+        ),
+      }
     case 'estMin':
       // 비동기화(ADR-0002) — est는 계획 총량, 블록은 건드리지 않는다
       return {
@@ -241,6 +254,12 @@ export function DayView({
     end: number
     invalid: boolean
   } | null>(null)
+  // 커서 추종 프리뷰 (D11) — "지금 무엇을 잡고 있는가". 위치는 리렌더 없이 ref로 직접 갱신
+  const [dragging, setDragging] = useState<{
+    title: string
+    duration: number
+  } | null>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   const base = useMemo<Store>(
     () => ({ tasks, blocks, carryTasks }),
@@ -369,6 +388,15 @@ export function DayView({
     )
   }
 
+  // 제목 인라인 편집 (D14) — 리스트·블록 공용. 빈 값 원복은 각 입력 UI가 담당
+  function handleRename(id: string, title: string) {
+    const trimmed = title.trim()
+    if (trimmed === '') {
+      return
+    }
+    run({ type: 'rename', id, title: trimmed }, () => renameTask(id, trimmed))
+  }
+
   function handleEstMin(id: string, value: number | null) {
     // 비동기화(ADR-0002) — 블록과 무관하게 계획 총량만 갱신, 선검사 불필요
     run({ type: 'estMin', id, value }, () => setEstMin(id, value))
@@ -397,11 +425,25 @@ export function DayView({
         return
       }
     }
-    const fromMin = isToday ? nowMinutesInSeoul() : GRID_START_MIN
-    const slot = findNextFreeSlot(store.blocks, estMin, fromMin)
+    // 클릭 배치 = 마지막 블록 뒤 (D13 — 예측 가능). 안 들어가면 빈 슬롯 폴백
+    let slot = findAfterLastSlot(store.blocks, estMin)
+    let fellBack = false
+    if (slot === null) {
+      const fromMin = isToday ? nowMinutesInSeoul() : GRID_START_MIN
+      slot = findNextFreeSlot(store.blocks, estMin, fromMin)
+      // 마지막 블록이 있었는데 뒤에 못 넣은 경우만 "예측이 깨진" 경우다
+      fellBack = store.blocks.length > 0
+    }
     if (slot === null) {
       setError('그리드에 빈 자리가 없습니다.')
       return
+    }
+    if (fellBack) {
+      // 예측이 깨진 유일한 경우 — 어디에 놓였는지 보여준다 (D13 예외 지시)
+      const scroll = gridScrollRef.current
+      if (scroll) {
+        scroll.scrollTop = minToY(slot.start) - scroll.clientHeight / 2
+      }
     }
     run(
       {
@@ -430,20 +472,19 @@ export function DayView({
   // 무이동(4px 미만)이면 클릭 = 다음 빈 슬롯 배치. 잔량 규칙은 클릭 배치와 동일 —
   // 전량 배치된 행은 드래그를 시작하지 않는다 (이동은 그리드에서 직접, 2026-08-01 오너 확정)
   function handleListDragStart(task: PlanTask, e: React.PointerEvent) {
-    if (task.is_top3 && task.est_min === null) {
-      setError('소요시간을 먼저 입력해 주세요.')
-      return
-    }
+    // 잔량·소요시간 검사는 드래그 확정(임계 통과) 시점에 — pointerdown만으로 에러를
+    // 띄우면 행/카드 안 모든 클릭(칩·배지 등)에 에러가 번쩍인다 (Task 015 E2E에서 발견)
     const placedSum = store.blocks
       .filter((b) => b.task_id === task.id)
       .reduce((sum, b) => sum + (b.end_min - b.start_min), 0)
     const duration =
       task.est_min !== null ? task.est_min - placedSum : DEFAULT_PLACE_MIN
-    if (duration <= 0 || (task.est_min === null && placedSum > 0)) {
-      setError('계획한 시간이 모두 배치되어 있습니다. 소요시간을 늘리거나 블록을 조정해 주세요.')
-      return
-    }
-    e.preventDefault()
+    const blockReason =
+      task.is_top3 && task.est_min === null
+        ? '소요시간을 먼저 입력해 주세요.'
+        : duration <= 0 || (task.est_min === null && placedSum > 0)
+          ? '계획한 시간이 모두 배치되어 있습니다. 소요시간을 늘리거나 블록을 조정해 주세요.'
+          : null
     const startX = e.clientX
     const startY = e.clientY
     const blocksSnapshot = store.blocks
@@ -461,11 +502,28 @@ export function DayView({
     const onMove = (ev: PointerEvent) => {
       if (
         !moved &&
-        Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4
+        Math.hypot(ev.clientX - startX, ev.clientY - startY) < DRAG_THRESHOLD_PX
       ) {
         return
       }
-      moved = true
+      if (!moved) {
+        moved = true
+        // 드래그 불가 상태(잔량 0 등)면 여기서야 에러를 알리고 종료
+        if (blockReason !== null) {
+          setError(blockReason)
+          window.removeEventListener('pointermove', onMove)
+          window.removeEventListener('pointerup', onUp)
+          window.removeEventListener('pointercancel', onUp)
+          return
+        }
+        // 임계 통과 = 드래그 시작 — 커서 추종 프리뷰 표시 (D11)
+        setDragging({ title: task.title, duration })
+      }
+      // 프리뷰는 리렌더 없이 커서를 따라간다 (리스트 위든 그리드 위든 항상)
+      const preview = previewRef.current
+      if (preview) {
+        preview.style.transform = `translate(${ev.clientX + 12}px, ${ev.clientY + 12}px)`
+      }
       const inner = gridInnerRef.current
       const scroll = gridScrollRef.current
       if (!inner || !scroll) {
@@ -508,11 +566,20 @@ export function DayView({
       window.removeEventListener('pointerup', onUp)
       window.removeEventListener('pointercancel', onUp)
       setListPreview(null)
+      setDragging(null)
       if (!moved) {
-        // 클릭 = 다음 빈 슬롯 자동 배치 (드래그를 강요하지 않는다 — CHANGE-002 §2-2)
-        handlePlace(task)
+        // 무이동 = 클릭 — 각 요소의 onClick이 담당한다 (행 전체 드래그와 클릭 대상 공존, D14-2)
         return
       }
+      // 드래그 후 남는 유령 클릭 한 번을 캡처 단계에서 삼킨다
+      window.addEventListener(
+        'click',
+        (ce) => {
+          ce.stopPropagation()
+          ce.preventDefault()
+        },
+        { capture: true, once: true },
+      )
       if (currentMin === null || computeInvalid(currentMin)) {
         return
       }
@@ -609,6 +676,7 @@ export function DayView({
               onEstMin={handleEstMin}
               onCategory={handleCategory}
               onPlace={handlePlace}
+              onRename={handleRename}
               onDragStart={handleListDragStart}
               onCarry={handleCarry}
               onCarryDelete={handleCarryDelete}
@@ -623,6 +691,13 @@ export function DayView({
             />
           )}
         </div>
+        {/* 커서 추종 드래그 프리뷰 (D11) — "잡았다"가 리스트·그리드 어디서든 끊기지 않는다 */}
+        {dragging !== null && (
+          <div ref={previewRef} className="drag-preview" data-testid="drag-preview">
+            {dragging.title} · {dragging.duration}분
+          </div>
+        )}
+
         <div className="border-l border-divider pl-6">
           <TimeGrid
             blocks={blockViews}
@@ -636,6 +711,8 @@ export function DayView({
             onCommitMove={handleCommitMove}
             onDelete={handleDeleteBlock}
             onCreateFixed={handleCreateFixed}
+            onRename={handleRename}
+            onStatus={handleStatus}
           />
         </div>
       </div>

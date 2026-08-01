@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import {
+  DRAG_THRESHOLD_PX,
   GRID_END_MIN,
   GRID_START_MIN,
   PX_PER_HOUR,
@@ -12,10 +13,17 @@ import {
   roundToSnap,
 } from '@/lib/grid'
 import { BLOCK_STATUS_LABELS, isBlockStatus } from '@/types/block'
+import type { BlockStatus } from '@/types/block'
 import type { BlockView } from '@/components/time-grid'
+import { InlineTitle } from '@/components/inline-title'
 
-// 클릭(무이동 up)과 드래그를 구분하는 이동 임계값 — Task 007의 클릭 선택이 onClick만 얹으면 된다
-const DRAG_THRESHOLD_PX = 4
+// 표식 클릭 = 상태 순환 (D14-4) — 편집 카드 세그먼트의 빠른 경로
+const NEXT_STATUS: Record<BlockStatus, BlockStatus> = {
+  planned: 'done',
+  done: 'partial',
+  partial: 'moved',
+  moved: 'planned',
+}
 
 type DragMode = 'move' | 'resize-top' | 'resize-bottom'
 
@@ -41,12 +49,16 @@ export function GridBlock({
   onCommit,
   onSelect,
   onDelete,
+  onRename,
+  onStatus,
 }: {
   block: BlockView
   selected: boolean
   onCommit: (id: string, startMin: number, endMin: number) => void
   onSelect: (id: string) => void
   onDelete: (id: string) => void
+  onRename: (id: string, title: string) => void
+  onStatus: (id: string, status: BlockStatus) => void
 }) {
   const [drag, setDrag] = useState<DragState | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -164,8 +176,16 @@ export function GridBlock({
     partial: 'mk-part',
     moved: 'mk-move',
   } as const
+  // 표식 클릭 = 상태 순환 (D14-4). fixed는 기록 대상이 아니라 표식 없음
   const statusMark = fixed ? null : (
-    <span aria-hidden="true" className={`mk ${MK_CLASS[status]} shrink-0`} />
+    <button
+      type="button"
+      aria-label={`상태 순환 (현재 ${BLOCK_STATUS_LABELS[status]})`}
+      data-testid="status-mark"
+      className={`mk ${MK_CLASS[status]} shrink-0 cursor-pointer`}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={() => onStatus(block.id, NEXT_STATUS[status])}
+    />
   )
 
   const dragShadow = '0 4px 12px rgba(32, 30, 29, 0.25)'
@@ -202,9 +222,14 @@ export function GridBlock({
       {tier === 'full' ? (
         <div className={`py-[7px] ${indent ? 'pl-[14px] pr-[10px]' : 'px-[10px]'}`}>
           <div className="flex items-center gap-1">
-            <div className="font-semibold truncate text-[14px]">
-              {block.title}
-            </div>
+            {/* 제목 클릭 = 편집 (D14-4, 리스트와 같은 규칙) — 팝오버 없음, 편집 대상은 제목 하나 */}
+            <InlineTitle
+              title={block.title}
+              onRename={(t) => onRename(block.task_id, t)}
+              interceptPointer
+              className="font-semibold text-[14px]"
+              inputClassName="flex-1 font-semibold text-[14px]"
+            />
             {partLabel && (
               <span className="shrink-0 text-[11px] font-normal text-text/45">
                 {partLabel}
@@ -225,11 +250,18 @@ export function GridBlock({
       ) : (
         // line(25~44분)·micro(10~24분): 한 줄 — 제목 좌측 + 시간·표식 우측
         <div
+          // pr-26px: hover 시 우측 상단 × 버튼이 상태 표식을 덮지 않도록 자리 확보
           className={`h-full flex items-center gap-2 leading-none ${
-            indent ? 'pl-[14px] pr-[10px]' : 'px-[10px]'
-          } ${tier === 'micro' ? 'text-[11px]' : 'text-[13px]'}`}
+            indent ? 'pl-[14px]' : 'pl-[10px]'
+          } pr-[26px] ${tier === 'micro' ? 'text-[11px]' : 'text-[13px]'}`}
         >
-          <div className="font-semibold truncate">{block.title}</div>
+          <InlineTitle
+            title={block.title}
+            onRename={(t) => onRename(block.task_id, t)}
+            interceptPointer
+            className="font-semibold"
+            inputClassName="font-semibold w-[45%]"
+          />
           {partLabel && (
             <span className="shrink-0 text-[11px] font-normal text-text/45">
               {partLabel}

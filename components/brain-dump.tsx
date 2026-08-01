@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import type { PlanTask } from '@/components/plan-panel'
+import { InlineTitle } from '@/components/inline-title'
 
 // 프레젠테이션 컴포넌트 — 낙관적 상태·액션 호출·드래그 오케스트레이션은 상위가 소유한다.
 // 행 구조 (CHANGE-002, D9): [⠿ 손잡이|색 막대|이름|힌트|삭제|TOP3 배지] — 체크박스 없음.
@@ -13,6 +14,8 @@ export function BrainDump({
   onAdd,
   onDelete,
   onToggleTop3,
+  onPlace,
+  onRename,
   onDragStart,
 }: {
   tasks: PlanTask[]
@@ -21,6 +24,8 @@ export function BrainDump({
   onAdd: (title: string) => Promise<void>
   onDelete: (id: string) => void
   onToggleTop3: (task: PlanTask) => void
+  onPlace: (task: PlanTask) => void
+  onRename: (id: string, title: string) => void
   onDragStart: (task: PlanTask, e: React.PointerEvent) => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -68,21 +73,26 @@ export function BrainDump({
           return (
             <li
               key={task.id}
-              className={`dump-row min-h-[40px] ${placed ? 'dump-set' : ''}`}
+              className={`dump-row min-h-[40px] select-none ${placed ? 'dump-set' : ''}`}
+              // 행 전체가 드래그 시작 영역 (D14-1) — 5px 임계로 내부 클릭 대상과 공존.
+              // input(제목 편집 중)은 자체 stopPropagation으로 제외된다
+              onPointerDown={(e) => {
+                if (!isPending) {
+                  onDragStart(task, e)
+                }
+              }}
             >
-              <span
-                role="button"
+              <button
+                type="button"
                 aria-label={`${task.title} 배치`}
                 data-testid="dump-grip"
+                disabled={isPending}
+                // 손잡이 클릭 = 마지막 블록 뒤 배치 (D13) — 어포던스로도 유지 (D14-1)
+                onClick={() => onPlace(task)}
                 className={`grip select-none ${isPending ? 'opacity-30' : ''}`}
-                onPointerDown={(e) => {
-                  if (!isPending) {
-                    onDragStart(task, e)
-                  }
-                }}
               >
                 ⠿
-              </span>
+              </button>
               {/* 색 막대 — TOP3만 컬러 (그리드 위계와 동일), 일반은 투명 */}
               <span
                 aria-hidden="true"
@@ -92,7 +102,13 @@ export function BrainDump({
                 }
                 style={{ background: task.is_top3 ? 'var(--cat, var(--color-neutral))' : 'transparent' }}
               />
-              <span className="flex-1 truncate">{task.title}</span>
+              {/* 제목 클릭 = 편집 (D14-3) — 각 지점이 뜻을 하나만 갖는다 */}
+              <InlineTitle
+                title={task.title}
+                onRename={(t) => onRename(task.id, t)}
+                className="flex-1"
+                inputClassName="flex-1 text-[15px]"
+              />
               <span className="hint">
                 {remaining > 0
                   ? placed

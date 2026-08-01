@@ -63,6 +63,8 @@ export function TimeGrid({
   onCommitMove,
   onDelete,
   onCreateFixed,
+  onRename,
+  onStatus,
 }: {
   blocks: BlockView[]
   selectedId: string | null
@@ -76,6 +78,8 @@ export function TimeGrid({
   onCommitMove: (id: string, startMin: number, endMin: number) => void
   onDelete: (id: string) => void
   onCreateFixed: (startMin: number, endMin: number, title: string) => void
+  onRename: (id: string, title: string) => void
+  onStatus: (id: string, status: import('@/types/block').BlockStatus) => void
 }) {
   // 서버 스냅샷은 null — 지금 라인은 클라이언트에서만 렌더돼 hydration 불일치가 없다
   const nowMin = useSyncExternalStore<number | null>(
@@ -279,6 +283,8 @@ export function TimeGrid({
               onCommit={onCommitMove}
               onSelect={onSelect}
               onDelete={onDelete}
+              onRename={onRename}
+              onStatus={onStatus}
             />
           ))}
 

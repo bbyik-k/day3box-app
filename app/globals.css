@@ -127,9 +127,9 @@
     color: var(--color-text);
   }
   /* 배치된 행 — 옅어짐 한 채널만 (10a). 자리는 옮기지 않는다.
-     시안 0.62는 비활성으로 읽힐 위험 → 0.72로 시작 (브리프 004 §5-4) */
+     0.72는 구분이 약했음(실사용) → 0.5 (브리프 005 D12 — 손잡이·호버가 살아 있어 비활성으로 안 읽힘) */
   .dump-set {
-    opacity: 0.72;
+    opacity: 0.5;
   }
 
   /* "＋ 할 일 추가…" 점선 입력 */
@@ -389,6 +389,23 @@
     border-right: 1px solid color-mix(in srgb, var(--color-text) 10%, transparent);
     border-bottom: 1px solid color-mix(in srgb, var(--color-text) 10%, transparent);
     color: color-mix(in srgb, var(--color-text) 62%, transparent);
+  }
+
+  /* 커서 추종 드래그 프리뷰 (D11) — "지금 무엇을 잡고 있는가". 스냅 고스트와 역할 분리 */
+  .drag-preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    pointer-events: none;
+    padding: 5px 10px;
+    background: var(--color-surface);
+    border: 1px solid color-mix(in srgb, var(--color-text) 12%, transparent);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 12px rgba(32, 30, 29, 0.25);
+    font-size: 13px;
+    opacity: 0.92;
+    white-space: nowrap;
   }
 
   /* 드래그 생성 고스트 (D1/4a) — 파선 시안 + 9% 배경, 하단 2px 실선("여기가 커서").

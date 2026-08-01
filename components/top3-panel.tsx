@@ -3,6 +3,7 @@
 import { CATEGORY_KEYS, categoryLabel } from '@/lib/category'
 import type { CategoryKey } from '@/lib/category'
 import type { PlanTask } from '@/components/plan-panel'
+import { InlineTitle } from '@/components/inline-title'
 
 const SWATCH_CLASSES: Record<CategoryKey, string> = {
   cat1: 'bg-cat1',
@@ -37,6 +38,8 @@ export function Top3Panel({
   onEstMin,
   onCategory,
   onPlace,
+  onRename,
+  onDragStart,
 }: {
   topTasks: PlanTask[]
   blocks: { task_id: string; start_min: number; end_min: number }[]
@@ -44,6 +47,8 @@ export function Top3Panel({
   onEstMin: (id: string, value: number | null) => void
   onCategory: (id: string, value: CategoryKey) => void
   onPlace: (task: PlanTask) => void
+  onRename: (id: string, title: string) => void
+  onDragStart: (task: PlanTask, e: React.PointerEvent) => void
 }) {
   // ±10 스테퍼 — 보조 수단 (프리셋 밖 값은 칩이 안 채워지고 상단 숫자만 바뀐다)
   function handleStep(task: PlanTask, delta: number) {
@@ -75,12 +80,23 @@ export function Top3Panel({
           return (
             <li
               key={task.id}
-              className="top3-card"
+              className="top3-card select-none"
               data-cat={task.category ?? undefined}
+              // 카드 전체가 드래그 시작 영역 (D15) — 5px 임계가 칩·스테퍼 클릭과 충돌을 막는다
+              onPointerDown={(e) => onDragStart(task, e)}
             >
               <div className="min-w-0 flex-1 flex flex-col gap-2">
-                {/* 헤더 행: 슬롯 라벨 + hover 도구 + 우측 상단 현재 소요시간 */}
+                {/* 헤더 행: 손잡이 + 슬롯 라벨 + hover 도구 + 우측 상단 현재 소요시간 */}
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label={`${task.title} 배치`}
+                    data-testid="top3-grip"
+                    onClick={() => onPlace(task)}
+                    className="grip select-none"
+                  >
+                    ⠿
+                  </button>
                   <div className="top3-kicker flex-1 min-w-0">
                     {String(index + 1).padStart(2, '0')}
                     {label !== null ? ` · ${label}` : ''}
@@ -117,15 +133,14 @@ export function Top3Panel({
                 </div>
 
                 {/* 제목 클릭 = 다음 빈 슬롯 자동 배치 (PRD 7.1 #4) */}
-                <button
-                  type="button"
-                  onClick={() => onPlace(task)}
-                  title="클릭하면 미배치 잔량을 다음 빈 슬롯에 배치"
-                  className="min-w-0 text-left cursor-pointer"
-                >
-                  <div className="text-[16px] font-semibold truncate">
-                    {task.title}
-                  </div>
+                {/* 제목 클릭 = 편집 (D14·D15) — 배치는 손잡이 클릭·카드 드래그가 담당 */}
+                <div className="min-w-0">
+                  <InlineTitle
+                    title={task.title}
+                    onRename={(t) => onRename(task.id, t)}
+                    className="block w-full text-[16px] font-semibold"
+                    inputClassName="w-full text-[16px] font-semibold"
+                  />
                   {placement !== null && (
                     <div
                       className="mt-px text-[11px] text-text/50"
@@ -134,7 +149,7 @@ export function Top3Panel({
                       {placement}
                     </div>
                   )}
-                </button>
+                </div>
 
                 {/* 프리셋 칩 한 줄 5개 — 자유 입력 없음 (D6: 소요시간은 계측이 아니라 어림) */}
                 <div
