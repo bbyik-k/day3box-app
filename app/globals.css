@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Broadsheet 디자인 토큰 (정본: docs/design_handoff_day3box_v0/README.md) */
+/* Broadsheet 디자인 토큰 (정본: docs/handoff-v0-003/README.md) */
 @theme {
   --color-bg: #f3f2f2;
   --color-surface: #eae9e9;
@@ -179,7 +179,7 @@
     border-left: 4px solid var(--cat, var(--color-divider));
   }
 
-  /* 소요시간 프리셋 칩 + ±10 스테퍼 (핸드오프 handoff-v0-002/day3box.css 이식 —
+  /* 소요시간 프리셋 칩 + ±10 스테퍼 (핸드오프 handoff-v0-003/day3box.css 이식 —
      자유 입력 제거: 어림값이라는 사실을 입력 자체가 전달한다, D6) */
   .chip {
     flex: 1;

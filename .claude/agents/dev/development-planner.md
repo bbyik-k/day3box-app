@@ -16,7 +16,7 @@ color: red
 | `docs/PRD_2.md` | v0 범위(F1~F9)·데이터 모델·기술 스택·UX 파라미터 확정본. **최우선 정본** |
 | `docs/ROADMAP_v1.md` | v0→v1→v2 단계 구조, Task 1~9 순서, 단계 이동 규칙 |
 | `docs/LEAN-CANVAS.md` | UVP·리스크(R1~R4)·기능 추가 판단 필터 |
-| `docs/design_handoff_day3box_v0/README.md` | 디자인 토큰(Broadsheet), 화면 명세, v0 스코프 경계, 엣지 케이스 |
+| `docs/handoff-v0-003/README.md` | 디자인 토큰(Broadsheet), 화면 명세, v0 스코프 경계, 엣지 케이스 |
 
 > 문서 간 충돌 시 우선순위: **PRD_2 = ROADMAP_v1 > 디자인 핸드오프 > Lean Canvas**.
 > 코드 작성이 수반되는 Task를 기술할 때는 이 프로젝트의 Next.js가 **16.x(breaking changes 있음)**이므로 `node_modules/next/dist/docs/`의 해당 가이드를 먼저 읽도록 Task에 명시한다 (프로젝트 AGENTS.md 규칙).

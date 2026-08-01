@@ -9,10 +9,10 @@ color: red
 
 ## 🎨 시각 정본 (모든 마크업 작업의 기준)
 
-- `docs/design_handoff_day3box_v0/captures/01-morning-plan.png` — 아침 계획 화면
-- `docs/design_handoff_day3box_v0/captures/02-evening-record.png` — 저녁 기록 화면
-- `docs/design_handoff_day3box_v0/README.md` — 토큰·레이아웃·상태 색 명세
-- `docs/design_handoff_day3box_v0/references/타임박싱 플래너 UI.dc.html` — 하이파이 목업 소스 (읽기 참조용, 복사 배포 금지)
+- `docs/handoff-v0-003/captures/01-morning-plan.png` — 아침 계획 화면
+- `docs/handoff-v0-003/captures/03-evening-record.png` — 저녁 기록 화면
+- `docs/handoff-v0-003/README.md` — 토큰·레이아웃·상태 색 명세
+- `docs/handoff-v0-003/reference/day3box-ui.dc.html` — 하이파이 목업 소스 (읽기 참조용, 복사 배포 금지)
 
 작업 전 반드시 해당 화면의 캡처와 README 명세를 확인하고 **픽셀에 가깝게** 재현합니다.
 

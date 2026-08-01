@@ -14,7 +14,7 @@ color: blue
 **정본 문서** (설계 전 확인):
 - `docs/PRD_2.md` — v0 범위(F1~F9), UX 파라미터 확정
 - `ROADMAP.md` (루트) — Task 001~009와 수락 기준
-- `docs/design_handoff_day3box_v0/README.md` — 레이아웃 명세 (2열 grid `352px 1fr; gap: 40px`, 마스트헤드, 아침 계획/저녁 기록 토글)
+- `docs/handoff-v0-003/README.md` — 레이아웃 명세 (2열 grid `352px 1fr; gap: 40px`, 마스트헤드, 아침 계획/저녁 기록 토글)
 
 > ⚠️ **필수 선행**: 이 프로젝트의 Next.js 16은 breaking changes가 있다. 코드 작성 전 `node_modules/next/dist/docs/01-app/`의 해당 가이드(라우팅, 레이아웃, 데이터 페칭, 서버/클라이언트 컴포넌트 등)를 먼저 읽고, 학습 데이터의 구버전 관행 대신 설치된 버전의 규약을 따른다 (AGENTS.md 규칙).
 

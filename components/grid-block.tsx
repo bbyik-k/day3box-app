@@ -137,7 +137,7 @@ export function GridBlock({
   const endMin = dragging ? drag.tempEnd : block.end_min
   const duration = endMin - startMin
   const heightPx = (duration / 60) * PX_PER_HOUR
-  // 길이별 3단계 레이아웃 (handoff-v0-002 §2: ≥45분 2줄 / 25~44분 한 줄 / 10~24분 초경량)
+  // 길이별 3단계 레이아웃 (handoff-v0-003 §2: ≥45분 2줄 / 25~44분 한 줄 / 10~24분 초경량)
   const tier = duration >= 45 ? 'full' : duration >= 25 ? 'line' : 'micro'
 
   const status = isBlockStatus(block.status) ? block.status : 'planned'

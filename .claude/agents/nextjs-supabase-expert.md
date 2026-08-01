@@ -15,7 +15,7 @@ model: sonnet
 **정본 문서** (작업 전 관련 부분 확인):
 - `docs/PRD_2.md` — v0 범위(F1~F9), 데이터 모델, UX 파라미터 확정 (최우선 정본)
 - `ROADMAP.md` (루트) — Task 001~009 순서와 수락 기준
-- `docs/design_handoff_day3box_v0/README.md` — 화면 명세, 엣지 케이스
+- `docs/handoff-v0-003/README.md` — 화면 명세, 엣지 케이스
 
 | 항목 | 값 |
 |------|------|
