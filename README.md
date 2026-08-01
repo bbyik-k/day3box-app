@@ -32,7 +32,7 @@ pnpm dev        # http://localhost:3000
 | [ROADMAP.md](ROADMAP.md) | 개발 실행 로드맵 — Task 순서·수락 기준·진행 상태 |
 | [docs/ROADMAP_v1.md](docs/ROADMAP_v1.md) | v0→v1→v2 단계 구조와 단계 이동 규칙 (기획 정본) |
 | [docs/LEAN-CANVAS.md](docs/LEAN-CANVAS.md) | UVP("시간 축"과 "사진")·리스크 — 기능 추가 판단 필터 |
-| [docs/design_handoff_day3box_v0/](docs/design_handoff_day3box_v0/README.md) | Broadsheet 디자인 토큰·화면 명세 |
+| [docs/handoff-v0-003/](docs/handoff-v0-003/README.md) | Broadsheet 디자인 토큰·화면 명세 |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | 변경 기록 — 사용자에게 보이는 변경, 날짜 기준 |
 | [docs/adr/](docs/adr/README.md) | 구조적 의사결정 기록 (ADR) |
 
