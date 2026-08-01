@@ -67,6 +67,71 @@
     color: var(--color-accent-2);
   }
 
+  /* Brain dump 행 재설계 (CHANGE-002, D9) — [⠿|색 막대|이름|힌트|TOP3 배지].
+     체크박스 없음: 좌측 진입점 = 주 동작(배치), 배지 = 보조 동작(승격) */
+  .grip {
+    width: 13px;
+    flex: none;
+    font-size: 13px;
+    line-height: 1;
+    color: color-mix(in srgb, var(--color-text) 28%, transparent);
+    cursor: grab;
+    touch-action: none;
+    /* 히트 영역 확보 (모바일 대비 최소 40px 지시 — 패딩 포함) */
+    padding: 12px 8px;
+    margin: -12px -8px;
+  }
+  .dump-row:hover > .grip {
+    color: var(--color-accent);
+  }
+  .bar3 {
+    width: 3px;
+    height: 17px;
+    flex: none;
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--color-accent);
+    white-space: nowrap;
+    visibility: hidden;
+  }
+  .dump-row:hover > .hint {
+    visibility: visible;
+  }
+  .tbtn {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    padding: 5px 9px;
+    border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: color-mix(in srgb, var(--color-text) 45%, transparent);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tbtn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .tbtn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .tbtn-on {
+    border-color: var(--color-text);
+    color: var(--color-text);
+    font-weight: 600;
+  }
+  .tbtn-on:hover {
+    border-color: var(--color-text);
+    color: var(--color-text);
+  }
+  /* 배치된 행 — 옅어짐 한 채널만 (10a). 자리는 옮기지 않는다.
+     시안 0.62는 비활성으로 읽힐 위험 → 0.72로 시작 (브리프 004 §5-4) */
+  .dump-set {
+    opacity: 0.72;
+  }
+
   /* "＋ 할 일 추가…" 점선 입력 */
   .dump-add-input {
     padding: 8px 10px;

@@ -3,21 +3,25 @@
 import { useRef } from 'react'
 import type { PlanTask } from '@/components/plan-panel'
 
-// 프레젠테이션 컴포넌트 — 낙관적 상태·액션 호출은 PlanPanel이 소유한다
+// 프레젠테이션 컴포넌트 — 낙관적 상태·액션 호출·드래그 오케스트레이션은 상위가 소유한다.
+// 행 구조 (CHANGE-002, D9): [⠿ 손잡이|색 막대|이름|힌트|삭제|TOP3 배지] — 체크박스 없음.
+// 좌측 진입점 = 주 동작(배치: 클릭=다음 빈 슬롯, 드래그=시각 지정), 배지 = 보조 동작(승격)
 export function BrainDump({
   tasks,
+  blocks,
   error,
   onAdd,
   onDelete,
   onToggleTop3,
-  onPlace,
+  onDragStart,
 }: {
   tasks: PlanTask[]
+  blocks: { task_id: string; start_min: number; end_min: number }[]
   error: string | null
   onAdd: (title: string) => Promise<void>
   onDelete: (id: string) => void
   onToggleTop3: (task: PlanTask) => void
-  onPlace: (task: PlanTask) => void
+  onDragStart: (task: PlanTask, e: React.PointerEvent) => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -31,11 +35,22 @@ export function BrainDump({
     inputRef.current?.focus()
   }
 
+  // 미배치 개수 (D9-6) — 묶음을 가르지 않고도 "몇 개 남았나"를 얻는다
+  const placedIds = new Set(blocks.map((b) => b.task_id))
+  const remainingCount = tasks.filter((t) => !placedIds.has(t.id)).length
+
   return (
     <section>
-      <h6 className="text-[13px] font-semibold uppercase tracking-[0.08em]">
-        쏟아내기 · Brain dump
-      </h6>
+      <div className="flex items-baseline justify-between">
+        <h6 className="text-[13px] font-semibold uppercase tracking-[0.08em]">
+          쏟아내기 · Brain dump
+        </h6>
+        {remainingCount > 0 && (
+          <span className="text-[12px] text-text/50" data-testid="remaining-count">
+            {remainingCount}개 남음
+          </span>
+        )}
+      </div>
       <p className="text-[13px] text-text/60 mt-1">
         머릿속을 다 비운다. 개수 제한 없음.
       </p>
@@ -43,33 +58,48 @@ export function BrainDump({
       <ul className="mt-3">
         {tasks.map((task) => {
           const isPending = task.id.startsWith('temp-')
+          const placedSum = blocks
+            .filter((b) => b.task_id === task.id)
+            .reduce((sum, b) => sum + (b.end_min - b.start_min), 0)
+          const placed = placedSum > 0
+          // 잔량이 남았을 때만 끌 수 있다 (전량 배치 행은 드래그 시도 시 에러 — 이동은 그리드에서)
+          const remaining =
+            task.est_min !== null ? task.est_min - placedSum : placed ? 0 : 1
           return (
-            <li key={task.id} className="dump-row">
-              <button
-                type="button"
-                aria-pressed={task.is_top3}
-                aria-label={`${task.title} TOP 3 ${task.is_top3 ? '내리기' : '올리기'}`}
-                disabled={isPending}
-                onClick={() => onToggleTop3(task)}
-                className={`size-[15px] shrink-0 rounded-sm border-[1.5px] disabled:opacity-30 ${
-                  task.is_top3
-                    ? 'border-accent bg-accent'
-                    : 'border-divider hover:border-accent'
-                }`}
-              />
-              <span className="flex-1">{task.title}</span>
-              {task.is_top3 && <span className="tag-outline">TOP 3</span>}
-              {/* 일반 항목도 남은 시간에 배치 — 소요시간 미지정이면 기본 30분 (F4: task "주로" TOP3) */}
-              <button
-                type="button"
+            <li
+              key={task.id}
+              className={`dump-row min-h-[40px] ${placed ? 'dump-set' : ''}`}
+            >
+              <span
+                role="button"
                 aria-label={`${task.title} 배치`}
-                data-testid="dump-place"
-                disabled={isPending}
-                onClick={() => onPlace(task)}
-                className="dump-delete shrink-0 text-[12px] disabled:opacity-30"
+                data-testid="dump-grip"
+                className={`grip select-none ${isPending ? 'opacity-30' : ''}`}
+                onPointerDown={(e) => {
+                  if (!isPending) {
+                    onDragStart(task, e)
+                  }
+                }}
               >
-                배치 →
-              </button>
+                ⠿
+              </span>
+              {/* 색 막대 — TOP3만 컬러 (그리드 위계와 동일), 일반은 투명 */}
+              <span
+                aria-hidden="true"
+                className="bar3"
+                data-cat={
+                  task.is_top3 ? (task.category ?? undefined) : undefined
+                }
+                style={{ background: task.is_top3 ? 'var(--cat, var(--color-neutral))' : 'transparent' }}
+              />
+              <span className="flex-1 truncate">{task.title}</span>
+              <span className="hint">
+                {remaining > 0
+                  ? placed
+                    ? '끌어서 남은 시간 배치'
+                    : '끌어서 시간 위로'
+                  : ''}
+              </span>
               <button
                 type="button"
                 aria-label={`${task.title} 삭제`}
@@ -78,6 +108,16 @@ export function BrainDump({
                 className="dump-delete text-[15px] leading-none px-1 disabled:opacity-30"
               >
                 ×
+              </button>
+              <button
+                type="button"
+                aria-pressed={task.is_top3}
+                aria-label={`${task.title} TOP 3 ${task.is_top3 ? '내리기' : '올리기'}`}
+                disabled={isPending}
+                onClick={() => onToggleTop3(task)}
+                className={`tbtn ${task.is_top3 ? 'tbtn-on' : ''} disabled:opacity-30`}
+              >
+                TOP 3
               </button>
             </li>
           )

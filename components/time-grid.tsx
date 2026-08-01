@@ -56,6 +56,9 @@ export function TimeGrid({
   selectedId,
   isToday,
   error,
+  scrollRef,
+  innerRef,
+  listPreview,
   onSelect,
   onCommitMove,
   onDelete,
@@ -65,6 +68,10 @@ export function TimeGrid({
   selectedId: string | null
   isToday: boolean
   error: string | null
+  // 리스트→그리드 드래그(D9)의 좌표 판정·자동 스크롤을 위해 DayView가 소유
+  scrollRef: React.RefObject<HTMLDivElement | null>
+  innerRef: React.RefObject<HTMLDivElement | null>
+  listPreview: { start: number; end: number; invalid: boolean } | null
   onSelect: (id: string) => void
   onCommitMove: (id: string, startMin: number, endMin: number) => void
   onDelete: (id: string) => void
@@ -76,8 +83,6 @@ export function TimeGrid({
     nowMinutesInSeoul,
     serverNowSnapshot,
   )
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const innerRef = useRef<HTMLDivElement>(null)
   const didAutoScroll = useRef(false)
   const [draft, setDraft] = useState<Draft | null>(null)
   // 놓은 뒤 이름 입력 단계 — 확정 전까지 블록은 생기지 않는다
@@ -101,7 +106,7 @@ export function TimeGrid({
     }
     didAutoScroll.current = true
     container.scrollTop = minToY(nowMin) - container.clientHeight / 2
-  }, [nowMin, isToday])
+  }, [nowMin, isToday, scrollRef])
 
   // "지금" 라인은 오늘 그리드에만 — 다른 날짜의 시각 표시는 거짓말이 된다
   const showNowLine =
@@ -276,6 +281,29 @@ export function TimeGrid({
               onDelete={onDelete}
             />
           ))}
+
+          {/* 리스트 드래그 배치 고스트 (D9) — 드롭 지점이 시작 시각, 잔량 길이로 고정 */}
+          {listPreview !== null && (
+            <div
+              className="ghost-block"
+              data-invalid={listPreview.invalid || undefined}
+              data-testid="list-ghost"
+              style={{
+                top: minToY(listPreview.start),
+                height:
+                  (listPreview.end - listPreview.start) * (PX_PER_HOUR / 60),
+              }}
+            >
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-[10px] pb-[3px] text-[11px] leading-none">
+                <span className="font-semibold">
+                  {listPreview.end - listPreview.start}분
+                </span>
+                <span className="text-text/60">
+                  {formatMin(listPreview.start)}–{formatMin(listPreview.end)}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* 드래그 고스트 — 정보는 하단(끄는 쪽), 겹침이면 중립 실선 (크림슨 금지) */}
           {draft !== null && draft.moved && (

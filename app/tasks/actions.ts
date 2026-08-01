@@ -212,11 +212,21 @@ export async function swapTop3(
   refresh()
 }
 
-// 배치: 현재 시각 이후 15분 정렬 슬롯 중 기존 블록과 겹치지 않는 첫 자리에 블록 생성.
+// 배치: startMin 지정 시 그 자리에(리스트 드래그 드롭 — D9), 미지정 시 다음 빈 슬롯에.
 // 슬롯 탐색과 겹침 검사는 여기(서버)가 단일 진실 지점이다 (한 시간대 = 최대 한 블록).
 export async function placeBlock(
   taskId: string,
+  startMin?: number,
 ): Promise<{ error: string } | undefined> {
+  if (
+    startMin !== undefined &&
+    (!Number.isInteger(startMin) ||
+      startMin % SNAP_MIN !== 0 ||
+      startMin < GRID_START_MIN ||
+      startMin >= GRID_END_MIN)
+  ) {
+    return { error: '유효하지 않은 시간입니다.' }
+  }
   const supabase = await createClient()
   const {
     data: { user },
@@ -262,12 +272,25 @@ export async function placeBlock(
     }
   }
 
-  // 오늘은 "지금 이후 다음 빈 슬롯", 다른 날짜(내일 계획·과거 보정)는 그리드 시작부터 탐색
-  const fromMin =
-    task.date === todayInSeoul() ? nowMinutesInSeoul() : GRID_START_MIN
-  const found = findNextFreeSlot(blocks ?? [], duration, fromMin)
-  if (found === null) {
-    return { error: '그리드에 빈 자리가 없습니다.' }
+  let found: { start: number; end: number } | null
+  if (startMin !== undefined) {
+    // 드롭 지점이 시작 시각 — 잔량 duration이 그 자리에 들어가는지만 검증
+    const end = startMin + duration
+    const conflict =
+      end > GRID_END_MIN ||
+      (blocks ?? []).some((b) => overlaps(startMin, end, b.start_min, b.end_min))
+    found = conflict ? null : { start: startMin, end }
+    if (found === null) {
+      return { error: '해당 시간대에 이미 다른 블록이 있습니다.' }
+    }
+  } else {
+    // 오늘은 "지금 이후 다음 빈 슬롯", 다른 날짜(내일 계획·과거 보정)는 그리드 시작부터 탐색
+    const fromMin =
+      task.date === todayInSeoul() ? nowMinutesInSeoul() : GRID_START_MIN
+    found = findNextFreeSlot(blocks ?? [], duration, fromMin)
+    if (found === null) {
+      return { error: '그리드에 빈 자리가 없습니다.' }
+    }
   }
 
   const { error } = await supabase.from('blocks').insert({

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useOptimistic, useState, useTransition } from 'react'
+import { useMemo, useOptimistic, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import {
   addTask,
@@ -17,7 +17,15 @@ import {
   toggleTop3,
 } from '@/app/tasks/actions'
 import { nowMinutesInSeoul, shiftDate } from '@/lib/date'
-import { GRID_START_MIN, findNextFreeSlot, overlaps } from '@/lib/grid'
+import {
+  GRID_END_MIN,
+  GRID_START_MIN,
+  PX_PER_HOUR,
+  SNAP_MIN,
+  findNextFreeSlot,
+  overlaps,
+  roundToSnap,
+} from '@/lib/grid'
 import type { CategoryKey } from '@/lib/category'
 import { CATEGORY_KEYS } from '@/lib/category'
 import type { BlockStatus } from '@/types/block'
@@ -225,6 +233,14 @@ export function DayView({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
+  // 리스트→그리드 드래그 배치(D9) — 그리드 좌표 판정·자동 스크롤을 위해 ref를 여기서 소유
+  const gridScrollRef = useRef<HTMLDivElement>(null)
+  const gridInnerRef = useRef<HTMLDivElement>(null)
+  const [listPreview, setListPreview] = useState<{
+    start: number
+    end: number
+    invalid: boolean
+  } | null>(null)
 
   const base = useMemo<Store>(
     () => ({ tasks, blocks, carryTasks }),
@@ -410,6 +426,113 @@ export function DayView({
     })
   }
 
+  // 리스트→그리드 드래그 배치(D9): 손잡이 pointerdown → window 추적 → 드롭 지점이 시작 시각.
+  // 무이동(4px 미만)이면 클릭 = 다음 빈 슬롯 배치. 잔량 규칙은 클릭 배치와 동일 —
+  // 전량 배치된 행은 드래그를 시작하지 않는다 (이동은 그리드에서 직접, 2026-08-01 오너 확정)
+  function handleListDragStart(task: PlanTask, e: React.PointerEvent) {
+    if (task.is_top3 && task.est_min === null) {
+      setError('소요시간을 먼저 입력해 주세요.')
+      return
+    }
+    const placedSum = store.blocks
+      .filter((b) => b.task_id === task.id)
+      .reduce((sum, b) => sum + (b.end_min - b.start_min), 0)
+    const duration =
+      task.est_min !== null ? task.est_min - placedSum : DEFAULT_PLACE_MIN
+    if (duration <= 0 || (task.est_min === null && placedSum > 0)) {
+      setError('계획한 시간이 모두 배치되어 있습니다. 소요시간을 늘리거나 블록을 조정해 주세요.')
+      return
+    }
+    e.preventDefault()
+    const startX = e.clientX
+    const startY = e.clientY
+    const blocksSnapshot = store.blocks
+    let moved = false
+    let currentMin: number | null = null
+
+    const computeInvalid = (start: number) => {
+      const end = start + duration
+      return (
+        end > GRID_END_MIN ||
+        blocksSnapshot.some((b) => overlaps(start, end, b.start_min, b.end_min))
+      )
+    }
+
+    const onMove = (ev: PointerEvent) => {
+      if (
+        !moved &&
+        Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4
+      ) {
+        return
+      }
+      moved = true
+      const inner = gridInnerRef.current
+      const scroll = gridScrollRef.current
+      if (!inner || !scroll) {
+        return
+      }
+      const sr = scroll.getBoundingClientRect()
+      const overGrid =
+        ev.clientX >= sr.left &&
+        ev.clientX <= sr.right &&
+        ev.clientY >= sr.top &&
+        ev.clientY <= sr.bottom
+      if (!overGrid) {
+        currentMin = null
+        setListPreview(null)
+        return
+      }
+      // 가장자리 자동 스크롤 — 화면 밖 시간대에도 놓을 수 있다
+      if (ev.clientY < sr.top + 48) {
+        scroll.scrollTop -= 12
+      } else if (ev.clientY > sr.bottom - 48) {
+        scroll.scrollTop += 12
+      }
+      const rect = inner.getBoundingClientRect()
+      const raw =
+        GRID_START_MIN + ((ev.clientY - rect.top) / PX_PER_HOUR) * 60
+      const min = Math.min(
+        Math.max(roundToSnap(raw), GRID_START_MIN),
+        GRID_END_MIN - SNAP_MIN,
+      )
+      currentMin = min
+      setListPreview({
+        start: min,
+        end: Math.min(min + duration, GRID_END_MIN),
+        invalid: computeInvalid(min),
+      })
+    }
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      setListPreview(null)
+      if (!moved) {
+        // 클릭 = 다음 빈 슬롯 자동 배치 (드래그를 강요하지 않는다 — CHANGE-002 §2-2)
+        handlePlace(task)
+        return
+      }
+      if (currentMin === null || computeInvalid(currentMin)) {
+        return
+      }
+      run(
+        {
+          type: 'place',
+          task,
+          tempId: `temp-${crypto.randomUUID()}`,
+          start: currentMin,
+          end: currentMin + duration,
+        },
+        () => placeBlock(task.id, currentMin ?? undefined),
+      )
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }
+
   function handleCarry(id: string) {
     run({ type: 'carry', id }, () => carryTaskToDate(id, date))
   }
@@ -486,6 +609,7 @@ export function DayView({
               onEstMin={handleEstMin}
               onCategory={handleCategory}
               onPlace={handlePlace}
+              onDragStart={handleListDragStart}
               onCarry={handleCarry}
               onCarryDelete={handleCarryDelete}
             />
@@ -505,6 +629,9 @@ export function DayView({
             selectedId={selectedBlock?.id ?? null}
             isToday={isToday}
             error={error}
+            scrollRef={gridScrollRef}
+            innerRef={gridInnerRef}
+            listPreview={listPreview}
             onSelect={handleSelect}
             onCommitMove={handleCommitMove}
             onDelete={handleDeleteBlock}

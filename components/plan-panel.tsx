@@ -29,6 +29,7 @@ export function PlanPanel({
   onEstMin,
   onCategory,
   onPlace,
+  onDragStart,
   onCarry,
   onCarryDelete,
 }: {
@@ -43,6 +44,7 @@ export function PlanPanel({
   onEstMin: (id: string, value: number | null) => void
   onCategory: (id: string, value: CategoryKey) => void
   onPlace: (task: PlanTask) => void
+  onDragStart: (task: PlanTask, e: React.PointerEvent) => void
   onCarry: (id: string) => void
   onCarryDelete: (id: string) => void
 }) {
@@ -100,11 +102,12 @@ export function PlanPanel({
       >
       <BrainDump
         tasks={tasks}
+        blocks={blocks}
         error={error}
         onAdd={onAdd}
         onDelete={onDelete}
         onToggleTop3={handleToggleTop3}
-        onPlace={onPlace}
+        onDragStart={onDragStart}
       />
 
       {/* 어제의 미배치 task — 소실되지 않고 여기서 접근·가져오기 가능 (길 B, PRD 3장) */}
