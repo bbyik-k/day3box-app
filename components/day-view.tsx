@@ -328,9 +328,9 @@ export function DayView({
     if (id.startsWith('temp-')) {
       return
     }
+    // 선택은 "만지겠다"이지 "기록하겠다"가 아니다 — 탭 이동은 탭 버튼으로만 (D18).
+    // 기록 탭에 들어가면 선택 블록이 편집 카드에 연동된다 (Task 007 유지)
     setSelectedId(id)
-    // 편집 카드는 저녁 기록 패널에 있다 — 계획 모드에서 선택하면 전환해 연동을 유지 (Task 007)
-    setMode('record')
   }
 
   function handleCommitMove(id: string, startMin: number, endMin: number) {
