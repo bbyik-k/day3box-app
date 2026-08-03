@@ -21,11 +21,24 @@ const EST_STEP = 10
 const EST_MAX = 1440
 
 // 배치량 메타 문구 — 미결 데이터 정의 확정 전 잠정이라 상수(함수)로 분리 (handoff §5)
-function placementLabel(est: number | null, placed: number): string | null {
+// 초과(D19)는 오류가 아니다(ADR-0002) — 두 숫자 병기, 경고색·아이콘 금지.
+// "추정이 30분 짧았다"는 학습 신호이므로 옅은 강조(굵기·불투명도)만 쓴다
+function placementLabel(
+  est: number | null,
+  placed: number,
+): React.ReactNode | null {
   if (placed === 0) {
     return est !== null ? '미배치' : null
   }
-  if (est === null || placed >= est) {
+  if (est !== null && placed > est) {
+    return (
+      <>
+        <span className="font-medium text-text/75">{placed}분</span>
+        {` / 계획 ${est}분`}
+      </>
+    )
+  }
+  if (est === null || placed === est) {
     return `${placed}분 배치됨`
   }
   return `총 ${est}분 중 ${placed}분 배치됨`
