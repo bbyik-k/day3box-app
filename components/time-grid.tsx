@@ -288,7 +288,8 @@ export function TimeGrid({
             />
           ))}
 
-          {/* 리스트 드래그 배치 고스트 (D9) — 드롭 지점이 시작 시각, 잔량 길이로 고정 */}
+          {/* 리스트 드래그 배치 고스트 (D9) — 드롭 지점이 시작 시각.
+              빈 구간보다 잔량이 크면 들어갈 크기로 잘려 보인다 (D17 — 보이는 크기 = 저장 크기) */}
           {listPreview !== null && (
             <div
               className="ghost-block"

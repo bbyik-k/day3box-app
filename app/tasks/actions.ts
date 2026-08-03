@@ -245,10 +245,13 @@ export async function swapTop3(
 }
 
 // 배치: startMin 지정 시 그 자리에(리스트 드래그 드롭 — D9), 미지정 시 다음 빈 슬롯에.
+// durationMin 지정 시(부분 배치 — D17) 그 길이로 — 잔량보다 덜 넣는 것만 허용하고,
+// 상한(DB 재계산 잔량)·겹침·그리드 끝은 아래에서 재검증한다 (조용한 보정 없음).
 // 슬롯 탐색과 겹침 검사는 여기(서버)가 단일 진실 지점이다 (한 시간대 = 최대 한 블록).
 export async function placeBlock(
   taskId: string,
   startMin?: number,
+  durationMin?: number,
 ): Promise<{ error: string } | undefined> {
   if (
     startMin !== undefined &&
@@ -256,6 +259,16 @@ export async function placeBlock(
       startMin % SNAP_MIN !== 0 ||
       startMin < GRID_START_MIN ||
       startMin >= GRID_END_MIN)
+  ) {
+    return { error: '유효하지 않은 시간입니다.' }
+  }
+  // 부분 길이는 드롭 위치와 함께만 의미가 있다. 스냅 배수 검사는 하지 않는다 —
+  // 인접 블록 경계가 스냅 비정렬일 수 있어 gap이 10분 배수가 아닐 수 있음
+  if (
+    durationMin !== undefined &&
+    (startMin === undefined ||
+      !Number.isInteger(durationMin) ||
+      durationMin <= 0)
   ) {
     return { error: '유효하지 않은 시간입니다.' }
   }
@@ -303,6 +316,13 @@ export async function placeBlock(
       return { error: '계획한 시간이 모두 배치되어 있습니다. 소요시간을 늘리거나 블록을 조정해 주세요.' }
     }
   }
+  // 부분 배치(D17) — 클라이언트 요청 길이는 잔량 상한 안에서만 신뢰
+  if (durationMin !== undefined) {
+    if (durationMin > duration) {
+      return { error: '유효하지 않은 시간입니다.' }
+    }
+    duration = durationMin
+  }
 
   let found: { start: number; end: number } | null
   if (startMin !== undefined) {
@@ -340,11 +360,12 @@ export async function placeBlock(
     return { error: '배치에 실패했습니다. 다시 시도해 주세요.' }
   }
 
-  // 기본값으로 배치했으면 est_min도 30으로 — 소요시간과 블록 높이는 단일 개념(양방향 동기화)
+  // 소요시간 미지정 배치면 실제 놓인 길이를 est_min으로 — 소요시간과 블록 높이는
+  // 단일 개념(양방향 동기화). 부분 배치로 잘렸으면 잘린 길이가 곧 계획이 된다 (클라 미러 동일)
   if (task.est_min === null) {
     await supabase
       .from('tasks')
-      .update({ est_min: estMin })
+      .update({ est_min: found.end - found.start })
       .eq('id', task.id)
       .eq('user_id', user.id)
   }

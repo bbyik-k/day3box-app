@@ -78,6 +78,25 @@ export function findAfterLastSlot(
     : null
 }
 
+// 부분 배치(D17): fromMin부터 다음 블록 시작(없으면 그리드 끝)까지의 빈 길이.
+// fromMin이 블록 내부면 0 — "놓을 수 없는 지점" 판정도 이 반환값 하나로 한다.
+// 그리드 끝 잘림(익일 03:00에도 같은 규칙)은 초기값 GRID_END_MIN이 자동 처리
+export function freeSpanAt(
+  existing: { start_min: number; end_min: number }[],
+  fromMin: number,
+): number {
+  let next = GRID_END_MIN
+  for (const b of existing) {
+    if (b.start_min <= fromMin && fromMin < b.end_min) {
+      return 0
+    }
+    if (b.start_min > fromMin && b.start_min < next) {
+      next = b.start_min
+    }
+  }
+  return next - fromMin
+}
+
 // [aStart, aEnd)와 [bStart, bEnd)의 겹침 판정 — 경계 접촉(end === start)은 겹침 아님
 export function overlaps(
   aStart: number,

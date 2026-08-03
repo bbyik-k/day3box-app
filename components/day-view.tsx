@@ -28,6 +28,7 @@ import {
   findNextFreeSlot,
   minToY,
   overlaps,
+  freeSpanAt,
   roundToSnap,
 } from '@/lib/grid'
 import type { CategoryKey } from '@/lib/category'
@@ -474,12 +475,12 @@ export function DayView({
     const placedSum = store.blocks
       .filter((b) => b.task_id === task.id)
       .reduce((sum, b) => sum + (b.end_min - b.start_min), 0)
-    const duration =
+    const remaining =
       task.est_min !== null ? task.est_min - placedSum : DEFAULT_PLACE_MIN
     const blockReason =
       task.is_top3 && task.est_min === null
         ? '소요시간을 먼저 입력해 주세요.'
-        : duration <= 0 || (task.est_min === null && placedSum > 0)
+        : remaining <= 0 || (task.est_min === null && placedSum > 0)
           ? '계획한 시간이 모두 배치되어 있습니다. 소요시간을 늘리거나 블록을 조정해 주세요.'
           : null
     const startX = e.clientX
@@ -488,13 +489,10 @@ export function DayView({
     let moved = false
     let currentMin: number | null = null
 
-    const computeInvalid = (start: number) => {
-      const end = start + duration
-      return (
-        end > GRID_END_MIN ||
-        blocksSnapshot.some((b) => overlaps(start, end, b.start_min, b.end_min))
-      )
-    }
+    // 부분 배치(D17): 빈 구간에 들어가는 만큼만 — 0이면 놓을 수 없는 지점(블록 내부).
+    // 고스트와 드롭이 같은 계산을 쓰므로 보이는 크기 = 저장되는 크기
+    const computeFit = (start: number) =>
+      Math.min(remaining, freeSpanAt(blocksSnapshot, start))
 
     const onMove = (ev: PointerEvent) => {
       if (
@@ -514,7 +512,7 @@ export function DayView({
           return
         }
         // 임계 통과 = 드래그 시작 — 커서 추종 프리뷰 표시 (D11)
-        setDragging({ title: task.title, duration })
+        setDragging({ title: task.title, duration: remaining })
       }
       // 프리뷰는 리렌더 없이 커서를 따라간다 (리스트 위든 그리드 위든 항상)
       const preview = previewRef.current
@@ -551,11 +549,17 @@ export function DayView({
         GRID_END_MIN - SNAP_MIN,
       )
       currentMin = min
-      setListPreview({
-        start: min,
-        end: Math.min(min + duration, GRID_END_MIN),
-        invalid: computeInvalid(min),
-      })
+      const fit = computeFit(min)
+      // 유효하면 잘린 크기로, 놓을 수 없는 지점이면 기존처럼 잔량 크기 + invalid 표시
+      setListPreview(
+        fit > 0
+          ? { start: min, end: min + fit, invalid: false }
+          : {
+              start: min,
+              end: Math.min(min + remaining, GRID_END_MIN),
+              invalid: true,
+            },
+      )
     }
 
     const onUp = () => {
@@ -577,18 +581,23 @@ export function DayView({
         },
         { capture: true, once: true },
       )
-      if (currentMin === null || computeInvalid(currentMin)) {
+      if (currentMin === null) {
         return
       }
+      const fit = computeFit(currentMin)
+      if (fit <= 0) {
+        return
+      }
+      const dropMin = currentMin
       run(
         {
           type: 'place',
           task,
           tempId: `temp-${crypto.randomUUID()}`,
-          start: currentMin,
-          end: currentMin + duration,
+          start: dropMin,
+          end: dropMin + fit,
         },
-        () => placeBlock(task.id, currentMin ?? undefined),
+        () => placeBlock(task.id, dropMin, fit),
       )
     }
 
@@ -688,10 +697,19 @@ export function DayView({
             />
           )}
         </div>
-        {/* 커서 추종 드래그 프리뷰 (D11) — "잡았다"가 리스트·그리드 어디서든 끊기지 않는다 */}
+        {/* 커서 추종 드래그 프리뷰 (D11) — "잡았다"가 리스트·그리드 어디서든 끊기지 않는다.
+            빈 구간에서 잘리면(D17) 들어갈 크기·남을 잔량을 드래그 중에 보여준다 */}
         {dragging !== null && (
           <div ref={previewRef} className="drag-preview" data-testid="drag-preview">
-            {dragging.title} · {dragging.duration}분
+            {(() => {
+              const fit =
+                listPreview !== null && !listPreview.invalid
+                  ? listPreview.end - listPreview.start
+                  : null
+              return fit !== null && fit < dragging.duration
+                ? `${dragging.title} · ${fit}분 · 남은 ${dragging.duration - fit}분`
+                : `${dragging.title} · ${dragging.duration}분`
+            })()}
           </div>
         )}
 
