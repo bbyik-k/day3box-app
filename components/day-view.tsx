@@ -362,14 +362,11 @@ export function DayView({
 
   // ── 계획 조작 (좌측 패널 콜백)
 
-  // form action(자동 transition) 안에서 호출됨 — 별도 startTransition 불필요
-  async function handleAdd(title: string) {
-    setError(null)
-    apply({ type: 'add', tempId: `temp-${crypto.randomUUID()}`, title })
-    const result = await addTask(title, date)
-    if (result?.error) {
-      setError(result.error)
-    }
+  // run()이 transition을 소유해 form action은 즉시 반환 — React가 입력창을 바로 리셋한다 (D16)
+  function handleAdd(title: string) {
+    run({ type: 'add', tempId: `temp-${crypto.randomUUID()}`, title }, () =>
+      addTask(title, date),
+    )
   }
 
   function handleDelete(id: string) {

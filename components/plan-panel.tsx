@@ -38,7 +38,7 @@ export function PlanPanel({
   blocks: { task_id: string; start_min: number; end_min: number }[]
   carryTasks: PlanTask[]
   error: string | null
-  onAdd: (title: string) => Promise<void>
+  onAdd: (title: string) => void
   onDelete: (id: string) => void
   onToggleTop3: (task: PlanTask, next: boolean) => void
   onSwap: (demoteId: string, promoteId: string) => void

@@ -21,7 +21,7 @@ export function BrainDump({
   tasks: PlanTask[]
   blocks: { task_id: string; start_min: number; end_min: number }[]
   error: string | null
-  onAdd: (title: string) => Promise<void>
+  onAdd: (title: string) => void
   onDelete: (id: string) => void
   onToggleTop3: (task: PlanTask) => void
   onPlace: (task: PlanTask) => void
@@ -30,14 +30,20 @@ export function BrainDump({
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
 
-  async function handleAdd(formData: FormData) {
-    const value = formData.get('title')
-    const title = typeof value === 'string' ? value.trim() : ''
+  // form action 금지(D16) — action이 startTransition과 entangle되면 React의 자동 폼 리셋이
+  // 서버 왕복 뒤로 밀리고, 지연 리셋이 타이핑 중인 다음 항목을 지울 수 있다. 수동 초기화로 즉시.
+  function handleAdd(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const input = inputRef.current
+    const title = input?.value.trim() ?? ''
     if (title === '') {
       return
     }
-    await onAdd(title)
-    inputRef.current?.focus()
+    onAdd(title)
+    if (input) {
+      input.value = ''
+      input.focus()
+    }
   }
 
   // 미배치 개수 (D9-6) — 묶음을 가르지 않고도 "몇 개 남았나"를 얻는다
@@ -140,7 +146,7 @@ export function BrainDump({
         })}
       </ul>
 
-      <form action={handleAdd} className="mt-2">
+      <form onSubmit={handleAdd} className="mt-2">
         <div className="dump-add-input flex items-center gap-2">
           <span aria-hidden="true">＋</span>
           <input
