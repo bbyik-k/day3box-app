@@ -506,4 +506,20 @@
   .btn-ghost:hover {
     color: var(--color-accent-2);
   }
+
+  /* 모바일(<lg, Tailwind lg=64rem과 동일 경계) — 기록 동선 보장 최소분 (Task 017)
+     hover 힌트는 터치에 무의미한데 nowrap ~90px 공간을 상시 점유해 제목 폭을 잠식한다.
+     input 16px 미만은 iOS 포커스 시 자동 줌 유발. grip의 touch-action:none은 스크롤 개시를 막는다 */
+  @media (width < 64rem) {
+    .hint {
+      display: none;
+    }
+    .dump-add-input,
+    .dump-add-input input {
+      font-size: 16px;
+    }
+    .grip {
+      touch-action: pan-y;
+    }
+  }
 }

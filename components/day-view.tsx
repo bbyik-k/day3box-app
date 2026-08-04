@@ -470,6 +470,10 @@ export function DayView({
   // 무이동(4px 미만)이면 클릭 = 다음 빈 슬롯 배치. 잔량 규칙은 클릭 배치와 동일 —
   // 전량 배치된 행은 드래그를 시작하지 않는다 (이동은 그리드에서 직접, 2026-08-01 오너 확정)
   function handleListDragStart(task: PlanTask, e: React.PointerEvent) {
+    // 모바일: 리스트→그리드 드래그는 범위 밖(R3) — 스크롤 제스처가 프리뷰·에러를 점멸시키는 것도 차단
+    if (e.pointerType === 'touch') {
+      return
+    }
     // 잔량·소요시간 검사는 드래그 확정(임계 통과) 시점에 — pointerdown만으로 에러를
     // 띄우면 행/카드 안 모든 클릭(칩·배지 등)에 에러가 번쩍인다 (Task 015 E2E에서 발견)
     const placedSum = store.blocks
@@ -619,14 +623,14 @@ export function DayView({
       {/* 마스트헤드 — h1 날짜 + 아침/저녁 토글 + ‹어제 내일› (목업 정본 구조) */}
       <div className="flex flex-wrap items-end justify-between gap-4 py-2">
         <div className="flex items-baseline gap-3">
-          <h1 className="text-[40px] font-semibold leading-tight">
+          <h1 className="text-[28px] lg:text-[40px] font-semibold leading-tight">
             {displayDate}
           </h1>
-          <span className="text-[14px] tracking-[0.04em] text-text/55">
+          <span className="hidden lg:inline text-[14px] tracking-[0.04em] text-text/55">
             타임박싱 플래너 · 계획 대비 실제
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             className="btn"
@@ -667,7 +671,8 @@ export function DayView({
       </div>
       <div aria-hidden="true" className="mb-6 h-px bg-text opacity-40" />
 
-      <div className="grid grid-cols-[352px_1fr] gap-8 items-start">
+      {/* 모바일(<lg) 1열: 기록 동선만 보장 (R3 — Task 017). 아침 계획(드래그·리사이즈)은 데스크톱 */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[352px_1fr] lg:gap-8 items-start">
         <div className="flex flex-col gap-6">
           {mode === 'plan' ? (
             <PlanPanel
@@ -713,7 +718,7 @@ export function DayView({
           </div>
         )}
 
-        <div className="border-l border-divider pl-6">
+        <div className="border-t border-divider pt-4 lg:border-t-0 lg:pt-0 lg:border-l lg:pl-6">
           <TimeGrid
             blocks={blockViews}
             selectedId={selectedBlock?.id ?? null}

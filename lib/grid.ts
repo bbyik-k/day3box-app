@@ -25,8 +25,11 @@ export function formatMin(min: number): string {
 export const SNAP_MIN = 10
 
 // 클릭과 드래그를 구분하는 이동 임계값 — 리스트 행·TOP3 카드·그리드 블록 공용 (D14-2, 구글 캘린더 방식)
-// v1 모바일에서는 8~10px 상향 검토
 export const DRAG_THRESHOLD_PX = 5
+
+// 터치 전용 탭 판정 슬롭 (Task 017) — 손가락 탭의 흔들림이 5px를 쉽게 넘어 탭이 삼켜지는 것 방지.
+// DRAG_THRESHOLD_PX(마우스)와 별개 — 모바일은 드래그가 없어 이 값은 "탭인가"만 판정한다
+export const TOUCH_TAP_SLOP_PX = 10
 
 export function ceilToSnap(min: number): number {
   return Math.ceil(min / SNAP_MIN) * SNAP_MIN

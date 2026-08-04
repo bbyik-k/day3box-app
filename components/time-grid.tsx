@@ -134,6 +134,10 @@ export function TimeGrid({
   }
 
   function handleGridPointerDown(e: React.PointerEvent) {
+    // 모바일: 드래그 생성은 범위 밖(R3) — pan-y 스크롤 제스처마다 draft가 점멸하는 것도 차단
+    if (e.pointerType === 'touch') {
+      return
+    }
     if (
       e.button !== 0 ||
       !e.isPrimary ||
@@ -207,8 +211,8 @@ export function TimeGrid({
         <h6 className="text-[13px] font-semibold uppercase tracking-[0.08em]">
           타임박스 · 04 – 익일 03시
         </h6>
-        {/* 3위계 범례 (handoff §3-1) — 막대의 유무가 "이건 일인가"의 답 */}
-        <div className="flex items-center gap-4 text-[12px] text-text/60">
+        {/* 3위계 범례 (handoff §3-1) — 막대의 유무가 "이건 일인가"의 답. 모바일은 숨김(열람 비필수) */}
+        <div className="hidden lg:flex items-center gap-4 text-[12px] text-text/60">
           <span className="inline-flex items-center gap-[5px]">
             <span aria-hidden="true" className="h-[11px] w-[4px] bg-accent" />
             오늘의 셋
@@ -233,14 +237,16 @@ export function TimeGrid({
         </p>
       )}
 
+      {/* 모바일 높이는 svh — iOS 툴바 축소로 값이 변하는 dvh는 스크롤 중 높이 점프를 만든다 */}
       <div
         ref={scrollRef}
-        className="overflow-y-auto max-h-[calc(100vh-240px)]"
+        className="overflow-y-auto max-h-[70svh] lg:max-h-[calc(100vh-240px)]"
         data-testid="grid-scroll"
       >
+        {/* 터치는 세로 스크롤 허용(pan-y) — 드래그 생성·이동은 pointerType 가드가 막는다 */}
         <div
           ref={innerRef}
-          className="relative touch-none"
+          className="relative touch-pan-y lg:touch-none"
           style={{ height: GRID_HEIGHT_PX }}
           onPointerDown={handleGridPointerDown}
           onPointerMove={handleGridPointerMove}

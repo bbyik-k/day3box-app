@@ -65,7 +65,7 @@ export default async function Home(props: {
   const carryTasks = (prevTasks ?? []).filter((t) => !placedIds.has(t.id))
 
   return (
-    <main className="mx-auto w-full max-w-[1120px] px-6 py-6">
+    <main className="mx-auto w-full max-w-[1120px] px-3 py-6 lg:px-6">
       <header className="flex items-baseline justify-between">
         <span className="text-[15px] font-semibold tracking-[0.02em]">
           day3box

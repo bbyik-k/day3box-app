@@ -1,8 +1,9 @@
 // 날짜 이동 등 서버 렌더 중 즉시 전환 피드백 — 무반응(이전 화면 정지)이 체감 지연을 키운다.
 // 최소 구성만: 콜드 스타트(1인 도구라 아침 첫 방문은 항상 콜드)에서 특히 유효
 export default function Loading() {
+  // 컨테이너 클래스는 page.tsx와 동기화 필수 — 다르면 로딩→본화면 전환 시 레이아웃 점프
   return (
-    <main className="mx-auto w-full max-w-[1120px] px-6 py-6">
+    <main className="mx-auto w-full max-w-[1120px] px-3 py-6 lg:px-6">
       <header className="flex items-baseline justify-between">
         <span className="text-[15px] font-semibold tracking-[0.02em]">
           day3box

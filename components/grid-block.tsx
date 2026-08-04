@@ -11,6 +11,7 @@ import {
   formatMin,
   minToY,
   roundToSnap,
+  TOUCH_TAP_SLOP_PX,
 } from '@/lib/grid'
 import { BLOCK_STATUS_LABELS, isBlockStatus } from '@/types/block'
 import type { BlockStatus } from '@/types/block'
@@ -30,7 +31,10 @@ type DragMode = 'move' | 'resize-top' | 'resize-bottom'
 type DragState = {
   mode: DragMode
   pointerId: number
+  // 터치는 탭 선택만 — temp를 갱신하지 않아 이동 커밋에 구조적으로 도달하지 않는다 (Task 017)
+  pointerType: string
   startClientY: number
+  startClientX: number
   // pointerdown 시점 값 고정 — 드래그 중 props rebase가 와도 delta 기준이 흔들리지 않는다
   originStart: number
   originEnd: number
@@ -67,11 +71,17 @@ export function GridBlock({
     if (e.button !== 0 || !e.isPrimary || drag !== null) {
       return
     }
+    // 터치 리사이즈는 시작하지 않는다 — 6px 핸들은 터치 대상이 아니다 (모바일은 기록 동선만, R3)
+    if (e.pointerType === 'touch' && mode !== 'move') {
+      return
+    }
     rootRef.current?.setPointerCapture(e.pointerId)
     setDrag({
       mode,
       pointerId: e.pointerId,
+      pointerType: e.pointerType,
       startClientY: e.clientY,
+      startClientX: e.clientX,
       originStart: block.start_min,
       originEnd: block.end_min,
       tempStart: block.start_min,
@@ -82,6 +92,18 @@ export function GridBlock({
 
   function handleMove(e: React.PointerEvent) {
     if (drag === null || e.pointerId !== drag.pointerId) {
+      return
+    }
+    // 터치: 위치를 절대 바꾸지 않는다 — 슬롭 초과만 기록해 탭(선택)과 스와이프(무시)를 구분.
+    // 세로 스크롤은 pan-y로 브라우저가 가져가며 pointercancel → handleCancel로 정리된다
+    if (drag.pointerType === 'touch') {
+      if (
+        !drag.moved &&
+        Math.hypot(e.clientX - drag.startClientX, e.clientY - drag.startClientY) >=
+          TOUCH_TAP_SLOP_PX
+      ) {
+        setDrag({ ...drag, moved: true })
+      }
       return
     }
     const dy = e.clientY - drag.startClientY
@@ -201,7 +223,7 @@ export function GridBlock({
   return (
     <div
       ref={rootRef}
-      className="grid-block touch-none select-none cursor-grab"
+      className="grid-block touch-pan-y lg:touch-none select-none cursor-grab"
       data-cat={block.category ?? undefined}
       data-status={status}
       data-kind={fixed ? 'fixed' : undefined}
